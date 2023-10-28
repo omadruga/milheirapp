@@ -17,9 +17,9 @@ Project Overview
 
 TODOs
 
-- Add a ORM support
-- Model CPF
-- Create CRUD for CPF
+- [done] Add a ORM support
+- [done] Model CPF
+- [done] Create CRUD for CPF
 - Model MilesAccount
 - Create CRUD for MilesAccount
 - Model Transactions
