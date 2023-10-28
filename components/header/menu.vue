@@ -1,6 +1,8 @@
 <template>
   <nav class="flex gap-4">
-    <ULink to="/">Dashboard</ULink>
-    <ULink to="/cpfs">CPFs</ULink>
+    <ULink to="/">DASHBOARD</ULink>
+    <ULink to="/cpfs">CPFS</ULink>
+    <ULink to="/accounts">CONTAS</ULink>
+    <ULink to="/companies">EMPRESAS</ULink>
   </nav>
 </template>

@@ -1,7 +1,7 @@
-import { getCpfs } from "~/server/data/cpfs";
+import { getCompanies } from "~/server/data/companies";
 
 export default defineEventHandler(async (event) => {
   const params = getQuery(event);
   const q = params.q;
-  return await getCpfs(q?.toLowerCase());
+  return await getCompanies(q?.toLowerCase());
 });

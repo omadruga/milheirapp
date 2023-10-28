@@ -1,6 +1,6 @@
 <template>
   <div class="flex gap-3 align-middle items-center">
-    <CrudMyTitle title="CPFs Administrados" />
+    <CrudMyTitle :title="title" />
     <UInput
       placeholder="Filtrar"
       :value="modelValue"
@@ -13,6 +13,6 @@
   </div>
 </template>
 <script setup>
-defineProps(["modelValue"]);
+defineProps(["modelValue", "title"]);
 defineEmits(["update:modelValue", "add", "refresh"]);
 </script>

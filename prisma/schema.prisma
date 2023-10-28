@@ -6,12 +6,49 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-model cpf {
-  id Int @id @default(autoincrement())
-  name String
-  cpf String @unique
+model Cpf {
+  id       Int       @id @default(autoincrement())
+  name     String
+  cpf      String    @unique
+  accounts Account[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Account {
+  id                     Int       @id @default(autoincrement())
+  company                Company   @relation(fields: [companyId], references: [id])
+  companyId              Int
+  cpf                    Cpf       @relation(fields: [cpfId], references: [id])
+  cpfId                  Int
+  miles                  Float? 
+  averageMilePrice       Float? 
+  neareastExpirationDate DateTime?
+  seats                  Int?
+  seatsUsed              Int?   
+  @@unique([companyId, cpfId])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Company {
+  id      Int         @id @default(autoincrement())
+  name    String      @unique
+  icon    String?
+  type    AccountType
+  Account Account[]
+}
+
+enum AccountType {
+  //BANK
+  //CREDIT
+  PROGRAM
+  AIRLINE
+  //SALE
 }
