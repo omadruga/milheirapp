@@ -38,7 +38,7 @@ export default defineEventHandler(async (event: any) => {
     data.averagePrice = (data.cost / data.miles) * 1000;
     data.cpfs = null;
     data.milesBuy = null;
-    data.averagePriceTransferBuy = null;
+    data.averagePriceTransfer = null;
   } else if (type === "PARTNER") {
     data.milesTo = null;
     data.cost = 0.0;
@@ -46,7 +46,7 @@ export default defineEventHandler(async (event: any) => {
     data.averagePrice = 0;
     data.cpfs = null;
     data.milesBuy = null;
-    data.averagePriceTransferBuy = null;
+    data.averagePriceTransfer = null;
   } else if (type == "TRANSFER") {
     accTo = accountTo;
     data.milesTo = parseFloat(milesTo);
@@ -54,13 +54,14 @@ export default defineEventHandler(async (event: any) => {
     data.expire = expire;
     (data.averagePrice = null), (data.cpfs = cpfs);
     data.milesBuy = null;
-    data.averagePriceTransferBuy = null;
+    data.averagePriceTransfer = null;
   } else if (type == "TRANSFER_BUY") {
     accTo = accountTo;
     data.milesTo = parseFloat(milesTo);
     data.cost = parseFloat(cost);
     data.expire = expire;
-    data.averagePrice = (data.cost / (data.milesTo - data.miles)) * 1000;
+    data.milesBuy = parseFloat(milesBuy);
+    data.averagePrice = (data.cost / data.milesBuy) * 1000;
     data.cpfs = null;
     data.milesBuy = parseFloat(milesBuy);
   } else if (type == "FLIGHT") {
@@ -70,7 +71,7 @@ export default defineEventHandler(async (event: any) => {
     data.averagePrice = null;
     data.cpfs = parseInt(cpfs);
     data.milesBuy = null;
-    data.averagePriceTransferBuy = null;
+    data.averagePriceTransfer = null;
   } else if (type == "EXPIRE") {
     data.milesTo = null;
     data.cost = null;
@@ -78,7 +79,7 @@ export default defineEventHandler(async (event: any) => {
     data.averagePrice = null;
     data.cpfs = null;
     data.milesBuy = null;
-    data.averagePriceTransferBuy = null;
+    data.averagePriceTransfer = null;
   }
 
   if (id) {

@@ -88,6 +88,18 @@ export async function updateAccount(
   });
 }
 
+export async function updateAccountMilePrice(id, miles, averageMilePrice) {
+  await prisma.Account.update({
+    where: {
+      id,
+    },
+    data: {
+      miles,
+      averageMilePrice,
+    },
+  });
+}
+
 export async function deleteAccount(id) {
   const result = await prisma.Account.delete({
     where: {

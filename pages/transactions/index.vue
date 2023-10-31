@@ -342,7 +342,7 @@ function add() {
 function edit(row: any) {
   state.value.id = row.id;
   selectedType.value = types.find((e) => e.id === row.type);
-  selectedAccount.value.id = row.id;
+  selectedAccount.value.id = row.account.id;
   selectedAccount.value.label = accountToStr(row.account) ?? "Selecione...";
   selectedAccountTo.value.id = row.accountTo?.id ?? null;
   selectedAccountTo.value.label = accountToStr(row.accountTo) ?? "Selecione...";

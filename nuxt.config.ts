@@ -19,7 +19,7 @@ export default defineNuxtConfig({
           d: "um dia",
           dd: "%d dias",
           M: "um mês",
-          MM: "%d monthseses",
+          MM: "%d meses",
           y: "um ano",
           yy: "%d anos",
         },

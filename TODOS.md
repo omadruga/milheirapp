@@ -27,10 +27,10 @@ TODOs
 - [done] Model Transactions
 - [done] Create CRUD for Transaction
 - [done] Create proper header
-- Create Dashboard
+- [done] Create Dashboard
 - Better error handling
 - Deploy on vercel
-- Integrate with Supabase
+- Integrate with Supabase or Add Auth manually
 - Model User
 - Create CRUD for User
 - Create Auth for User
