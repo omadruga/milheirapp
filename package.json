@@ -11,15 +11,18 @@
   },
   "devDependencies": {
     "@nuxt/devtools": "latest",
+    "dayjs-nuxt": "^2.1.9",
     "nuxt": "^3.8.0",
     "vue": "^3.3.7",
     "vue-router": "^4.2.5"
   },
   "dependencies": {
     "@nuxt/ui": "^2.9.0",
+    "@popperjs/core": "^2.11.8",
     "@prisma/client": "5.5.2",
     "maska": "^2.1.10",
-    "prisma": "^5.5.2"
+    "prisma": "^5.5.2",
+    "v-calendar": "^3.1.2"
   },
   "prisma": {
     "seed": "node prisma/seed.js"

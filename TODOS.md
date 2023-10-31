@@ -24,8 +24,14 @@ TODOs
 - [done] Create CRUD for Account
 - [done] Model Company
 - [done] Create CRUD for Company
-- Model Transactions
-- Create CRUD for Transaction
+- [done] Model Transactions
+- [done] Create CRUD for Transaction
+- Create proper header
 - Create Dashboard
-- Integrate with Supabase
+- Better error handling
 - Deploy on vercel
+- Integrate with Supabase
+- Model User
+- Create CRUD for User
+- Create Auth for User
+- Create Profile for User

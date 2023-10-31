@@ -4,5 +4,6 @@
     <ULink to="/cpfs">CPFS</ULink>
     <ULink to="/accounts">CONTAS</ULink>
     <ULink to="/companies">EMPRESAS</ULink>
+    <ULink to="/transactions">TRANSAÇÕES</ULink>
   </nav>
 </template>

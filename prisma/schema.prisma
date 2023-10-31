@@ -31,6 +31,8 @@ model Account {
   neareastExpirationDate DateTime?
   seats                  Int?
   seatsUsed              Int?   
+  transactions    Transaction[] @relation("account")
+  transactionsTo  Transaction[] @relation("accountTo")
   @@unique([companyId, cpfId])
 
   createdAt DateTime @default(now())
@@ -43,6 +45,31 @@ model Company {
   icon    String?
   type    AccountType
   Account Account[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Transaction {
+  id      Int         @id @default(autoincrement())
+  type TransactionType
+  account Account @relation("account", fields: [accountId], references: [id])
+  accountId Int  
+  accountTo Account? @relation("accountTo", fields: [accountToId], references: [id])
+  accountToId Int?  
+  date DateTime
+  miles Float
+  milesTo Float?
+  cost Float? 
+  expire DateTime?
+  description String?
+  averagePrice Float?
+  cpfs Int?
+  milesBuy Float?
+  averagePriceTransferBuy Float?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 enum AccountType {
@@ -51,4 +78,14 @@ enum AccountType {
   PROGRAM
   AIRLINE
   //SALE
+}
+
+enum TransactionType {
+  BUY
+  MEMBERSHIP
+  PARTNER
+  TRANSFER
+  TRANSFER_BUY
+  FLIGHT
+  EXPIRE
 }
