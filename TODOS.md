@@ -26,7 +26,7 @@ TODOs
 - [done] Create CRUD for Company
 - [done] Model Transactions
 - [done] Create CRUD for Transaction
-- Create proper header
+- [done] Create proper header
 - Create Dashboard
 - Better error handling
 - Deploy on vercel
