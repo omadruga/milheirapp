@@ -28,8 +28,8 @@ TODOs
 - [done] Create CRUD for Transaction
 - [done] Create proper header
 - [done] Create Dashboard
-- Better error handling
-- Deploy on vercel
+- [done] Deploy on vercel
+- Better error handling,
 - Integrate with Supabase or Add Auth manually
 - Model User
 - Create CRUD for User
