@@ -6,42 +6,51 @@ import {
   updateAccountMilePriceSeats,
 } from "./accounts";
 
-export async function getTransactions() {
-  return await prisma.Transaction.findMany({
-    include: {
-      account: {
-        include: {
-          cpf: {
-            select: {
-              name: true,
-              cpf: true,
-            },
-          },
-          company: {
-            select: {
-              name: true,
-              icon: true,
-            },
+export async function getTransactions(where) {
+  const include = {
+    account: {
+      include: {
+        cpf: {
+          select: {
+            name: true,
+            cpf: true,
           },
         },
-      },
-      accountTo: {
-        include: {
-          cpf: {
-            select: {
-              name: true,
-              cpf: true,
-            },
-          },
-          company: {
-            select: {
-              name: true,
-              icon: true,
-            },
+        company: {
+          select: {
+            name: true,
+            icon: true,
           },
         },
       },
     },
+
+    accountTo: {
+      include: {
+        cpf: {
+          select: {
+            name: true,
+            cpf: true,
+          },
+        },
+        company: {
+          select: {
+            name: true,
+            icon: true,
+          },
+        },
+      },
+    },
+  };
+  if (where) {
+    return await prisma.Transaction.findMany({
+      include,
+      where,
+      orderBy: [{ date: "desc" }],
+    });
+  }
+  return await prisma.Transaction.findMany({
+    include,
     orderBy: [{ date: "desc" }],
   });
 }
@@ -313,7 +322,6 @@ async function calculate(accountId) {
   if (t.account.company.type == "PROGRAM") {
     updateAccountMilePrice(accountId, miles, averagePrice);
   } else if (t.account.company.type == "AIRLINE") {
-    console.log("updateAccountMilePriceSeats");
     updateAccountMilePriceSeats(
       accountId,
       miles,

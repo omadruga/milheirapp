@@ -1,11 +1,32 @@
 <template>
   <div>
-    <CrudHeader
-      title="Transações"
-      v-model="filter"
-      @add="add"
-      @refresh="refresh"
-    />
+    <div class="flex gap-3 align-middle items-center">
+      <CrudMyTitle title="Transações" />
+      <UInput placeholder="Filtrar" v-model="filter" />
+      <USelectMenu
+        v-model="selectedAccountFilter"
+        :searchable="searchAccount"
+        searchable-placeholder="Pesquisar Conta"
+        @change="refresh"
+      >
+        <template #label>
+          {{ selectedAccountFilter?.label ?? "Selecione..." }}
+        </template>
+      </USelectMenu>
+      <USelectMenu
+        v-model="selectedTypeFilter"
+        :options="types"
+        @change="refresh"
+      >
+        <template #label>
+          {{ selectedTypeFilter?.label ?? "Selecione..." }}
+        </template>
+      </USelectMenu>
+      <UButtonGroup>
+        <CrudRefreshButton @refresh="refresh" />
+        <CrudAddButton @add="add" />
+      </UButtonGroup>
+    </div>
     <UTable :rows="filteredTransactions" :columns="columns" :loading="pending">
       <template #empty-state>
         <div class="flex flex-col items-center justify-center py-6 gap-3">
@@ -27,6 +48,9 @@
       </template>
       <template #date-data="{ row }">
         <span>{{ $dayjs(row.date).format("DD/MM/YYYY") }}</span>
+      </template>
+      <template #averagePrice-data="{ row }">
+        <span>{{ row.averagePrice?.toFixed(2) }}</span>
       </template>
       <template #expire-data="{ row }">
         <span>{{
@@ -189,6 +213,10 @@ import type { FormError, FormSubmitEvent } from "@nuxt/ui/dist/runtime/types";
 const toast = useToast();
 const types = [
   {
+    id: null,
+    label: "Selecione...",
+  },
+  {
     id: "BUY",
     label: transactionTypeToString("BUY"),
   },
@@ -217,7 +245,9 @@ const types = [
     label: transactionTypeToString("EXPIRE"),
   },
 ];
+
 const selectedType = ref();
+const selectedTypeFilter = ref();
 const searchAccount = async (q: any) => {
   const accounts = await $fetch("/api/accounts", { params: { q } });
   return accounts
@@ -233,8 +263,9 @@ const searchAccount = async (q: any) => {
     )
     .filter(Boolean);
 };
-const selectedAccount = ref({ label: "Selecione...", id: 0 });
-const selectedAccountTo = ref({ label: "Selecione...", id: 0 });
+const selectedAccount = types[0];
+const selectedAccountTo = types[0];
+const selectedAccountFilter = types[0];
 const state = ref({
   id: undefined,
   date: undefined,
@@ -482,7 +513,14 @@ const columns = [
 const { pending, data: transactions } = await useLazyAsyncData(
   "transactions",
   () => {
-    return $fetch("/api/transactions");
+    var query = {};
+    if (selectedTypeFilter.value?.id) {
+      query.type = selectedTypeFilter.value.id;
+    }
+    if (selectedAccountFilter.value?.id) {
+      query.account = selectedAccountFilter.value.id;
+    }
+    return $fetch("/api/transactions", { params: query });
   }
 );
 const filteredTransactions = computed(() => {

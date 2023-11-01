@@ -31,8 +31,32 @@ TODOs
 - [done] Deploy on vercel
 - Better error handling,
 - Integrate with Supabase or Add Auth manually
-- Model User
-- Create CRUD for User
+- Model User/Role
+- Role Guest, User, Admin
+- Restrict pages based on role
+- Create CRUD for User with Role
 - Create Auth for User
 - Create Profile for User
 - SEO Thing
+- CPF couting
+- Nearest expire
+- Email when Latam CPFs free (daily cron job at 7 am)
+
+ENHANCEMENTs
+
+- thounand point on numbers
+- currency on money numbers
+- icons on dashboard
+- order selects
+- order dashboard
+- filter transaction
+- make table a component
+- make form a component
+- filter account selection on transactions
+  -- flight can only be selected for airline
+  -- transfer can only target same cpf account
+- make the code more readable
+- make some unit tests
+- make some integration tests
+- make some e2e tests
+- push to github

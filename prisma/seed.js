@@ -61,8 +61,27 @@ async function seed() {
       cpf: { connect: { id: 2 } },
     },
   });
+  const guLivelo = await prisma.account.create({
+    data: {
+      company: { connect: { id: 1 } },
+      cpf: { connect: { id: 1 } },
+    },
+  });
+  const guAzul = await prisma.account.create({
+    data: {
+      company: { connect: { id: 3 } },
+      cpf: { connect: { id: 1 } },
+    },
+  });
+  const guGol = await prisma.account.create({
+    data: {
+      company: { connect: { id: 4 } },
+      cpf: { connect: { id: 1 } },
+    },
+  });
   await prisma.transaction.createMany({
     data: [
+      // JAQUE
       {
         type: "MEMBERSHIP",
         accountId: jaqueLivelo.id,
@@ -162,6 +181,24 @@ async function seed() {
         date: new Date("2022-09-21"),
         miles: 9000,
         averagePrice: 0,
+      },
+
+      // GU
+      {
+        type: "MEMBERSHIP",
+        accountId: guLivelo.id,
+        date: new Date("2022-03-25"),
+        miles: 1000,
+        cost: 41.9,
+        averagePrice: (41.9 / 1000) * 1000,
+      },
+      {
+        type: "BUY",
+        accountId: guLivelo.id,
+        date: new Date("2022-03-25"),
+        miles: 14000,
+        cost: 588,
+        averagePrice: (588 / 14000) * 1000,
       },
     ],
   });
