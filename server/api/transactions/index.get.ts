@@ -12,9 +12,7 @@ export default defineEventHandler(async (event) => {
     if (account) {
       where.accountId = parseInt(account);
     }
-    console.log("getTransactions where=" + JSON.stringify(where));
     return await getTransactions(where);
   }
-  console.log("getTransactions");
   return await getTransactions();
 });
