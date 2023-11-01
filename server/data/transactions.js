@@ -1,7 +1,10 @@
 import prisma from "./prisma";
 import { Prisma } from "@prisma/client";
 import { useDayjs } from "#dayjs";
-import { updateAccountMilePrice } from "./accounts";
+import {
+  updateAccountMilePrice,
+  updateAccountMilePriceSeats,
+} from "./accounts";
 
 export async function getTransactions() {
   return await prisma.Transaction.findMany({
@@ -180,7 +183,8 @@ async function calculate(accountId) {
   var miles = 0;
   var averagePrice = 0;
   var expire = null;
-  var cpfs = 0;
+  var seats = 0;
+  var seatsUsed = 0;
 
   for (var i = 0; i < transactions.length; i++) {
     var t = transactions[i];
@@ -266,12 +270,14 @@ async function calculate(accountId) {
         case "Latam": {
           // 24 cpfs + próprio
           // cada cpf consome uma vaga por 366 dias
+          seats = 24;
           start = dayjs().subtract(366, "day");
           break;
         }
         case "Gol": {
           // 25 cpfs + próprio
           // ano calendário, janeiro zera
+          seats = 25;
           start = dayjs().startOf("year");
           break;
         }
@@ -279,7 +285,7 @@ async function calculate(accountId) {
       if (start) {
         if (dayjs(t.date).isAfter(start)) {
           if (t.cpfs && t.cpfs > 0) {
-            cpfs += t.cpfs;
+            seatsUsed += t.cpfs;
           }
         }
       }
@@ -301,11 +307,19 @@ async function calculate(accountId) {
     }
   }
 
-  console.log(
-    "END miles=" + miles + ", price=" + averagePrice + ", cpfs=" + cpfs
-  );
   if (miles == 0) {
     averagePrice = 0;
   }
-  updateAccountMilePrice(accountId, miles, averagePrice);
+  if (t.account.company.type == "PROGRAM") {
+    updateAccountMilePrice(accountId, miles, averagePrice);
+  } else if (t.account.company.type == "AIRLINE") {
+    console.log("updateAccountMilePriceSeats");
+    updateAccountMilePriceSeats(
+      accountId,
+      miles,
+      averagePrice,
+      seats,
+      seatsUsed
+    );
+  }
 }
