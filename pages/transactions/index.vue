@@ -263,9 +263,9 @@ const searchAccount = async (q: any) => {
     )
     .filter(Boolean);
 };
-const selectedAccount = types[0];
-const selectedAccountTo = types[0];
-const selectedAccountFilter = types[0];
+const selectedAccount = ref(types[0]);
+const selectedAccountTo = ref(types[0]);
+const selectedAccountFilter = ref(types[0]);
 const state = ref({
   id: undefined,
   date: undefined,
