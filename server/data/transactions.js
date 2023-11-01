@@ -209,6 +209,10 @@ async function calculate(accountId) {
     } else if (t.type == "TRANSFER") {
       // nos estamos enviando
       if (t.accountId == accountId) {
+        // atualizado preço médio na transfer
+        updateAveragePriceTransfer(t.id, averagePrice);
+
+        // depois envia
         miles -= t.miles;
         if (miles < 0) {
           miles = 0;
@@ -217,10 +221,10 @@ async function calculate(accountId) {
       } else {
         if (t.miles > 0) {
           averagePrice =
-            (averagePrice * miles + t.averagePrice * t.miles) /
-            (t.miles + miles);
+            (averagePrice * miles + t.averagePriceTransfer * t.miles) /
+            (t.milesTo + miles);
         }
-        miles += t.miles;
+        miles += t.milesTo;
         if (miles < 0) {
           miles = 0;
         }
@@ -230,8 +234,9 @@ async function calculate(accountId) {
       if (t.accountId == accountId) {
         // primeiro compra
         averagePrice =
-          (averagePrice * miles + t.averagePrice * t.milesBuy) /
-          (t.milesBuy + miles);
+          (averagePrice * miles +
+            t.averagePriceTransfer * (t.miles + t.milesBuy)) /
+          (t.milesTo + miles);
         miles += t.milesBuy;
         updateAveragePriceTransfer(t.id, averagePrice);
 

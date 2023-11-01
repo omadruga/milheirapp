@@ -43,6 +43,83 @@ async function seed() {
       { name: "Jaqueline", cpf: "057.274.369-66" },
     ],
   });
+  const jaqueLivelo = await prisma.account.create({
+    data: {
+      company: { connect: { id: 1 } },
+      cpf: { connect: { id: 2 } },
+    },
+  });
+  const jaqueAzul = await prisma.account.create({
+    data: {
+      company: { connect: { id: 3 } },
+      cpf: { connect: { id: 2 } },
+    },
+  });
+  await prisma.transaction.createMany({
+    data: [
+      {
+        type: "MEMBERSHIP",
+        accountId: jaqueLivelo.id,
+        date: new Date("2022-04-21"),
+        miles: 12000,
+        cost: 489.9,
+        averagePrice: (489.9 / 12000) * 1000,
+      },
+      {
+        type: "PARTNER",
+        accountId: jaqueLivelo.id,
+        date: new Date("2022-05-04"),
+        miles: 41,
+        averagePrice: 0,
+      },
+      {
+        type: "MEMBERSHIP",
+        accountId: jaqueLivelo.id,
+        date: new Date("2022-05-21"),
+        miles: 12000,
+        cost: 489.9,
+        averagePrice: (489.9 / 12000) * 1000,
+      },
+      {
+        type: "MEMBERSHIP",
+        accountId: jaqueLivelo.id,
+        date: new Date("2022-06-21"),
+        miles: 12000,
+        cost: 489.9,
+        averagePrice: (489.9 / 12000) * 1000,
+      },
+      {
+        type: "PARTNER",
+        accountId: jaqueLivelo.id,
+        date: new Date("2022-06-21"),
+        miles: 9000,
+        averagePrice: 0,
+      },
+      {
+        type: "MEMBERSHIP",
+        accountId: jaqueLivelo.id,
+        date: new Date("2022-07-21"),
+        miles: 12000,
+        cost: 489.9,
+        averagePrice: (489.9 / 12000) * 1000,
+      },
+      {
+        type: "BUY",
+        accountId: jaqueLivelo.id,
+        date: new Date("2022-07-21"),
+        miles: 15000,
+        cost: 525,
+        averagePrice: (525 / 15000) * 1000,
+      },
+      {
+        type: "PARTNER",
+        accountId: jaqueLivelo.id,
+        date: new Date("2022-08-12"),
+        miles: 263,
+        averagePrice: 0,
+      },
+    ],
+  });
 }
 
 try {

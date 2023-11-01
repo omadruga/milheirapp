@@ -52,7 +52,8 @@ export default defineEventHandler(async (event: any) => {
     data.milesTo = parseFloat(milesTo);
     data.cost = null;
     data.expire = expire;
-    (data.averagePrice = null), (data.cpfs = cpfs);
+    data.averagePrice = null;
+    data.cpfs = cpfs;
     data.milesBuy = null;
     data.averagePriceTransfer = null;
   } else if (type == "TRANSFER_BUY") {

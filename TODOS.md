@@ -35,3 +35,4 @@ TODOs
 - Create CRUD for User
 - Create Auth for User
 - Create Profile for User
+- SEO Thing
