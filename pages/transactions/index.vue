@@ -99,7 +99,7 @@
               searchable-placeholder="Pesquisar Conta"
             >
               <template #label>
-                {{ selectedAccount?.label ?? "Selecione..." }}
+                {{ selectedAccount.label }}
               </template>
             </USelectMenu>
           </UFormGroup>
@@ -115,7 +115,7 @@
               searchable-placeholder="Pesquisar Conta"
             >
               <template #label>
-                {{ selectedAccountTo?.label ?? "Selecione..." }}
+                {{ selectedAccountTo.label }}
               </template>
             </USelectMenu>
           </UFormGroup>
@@ -263,9 +263,9 @@ const searchAccount = async (q: any) => {
     )
     .filter(Boolean);
 };
-const selectedAccount = ref(types[0]);
-const selectedAccountTo = ref(types[0]);
-const selectedAccountFilter = ref(types[0]);
+const selectedAccount = ref({});
+const selectedAccountTo = ref({});
+const selectedAccountFilter = ref({});
 const state = ref({
   id: undefined,
   date: undefined,
@@ -373,10 +373,15 @@ function add() {
 function edit(row: any) {
   state.value.id = row.id;
   selectedType.value = types.find((e) => e.id === row.type);
-  selectedAccount.value.id = row.account.id;
-  selectedAccount.value.label = accountToStr(row.account) ?? "Selecione...";
-  selectedAccountTo.value.id = row.accountTo?.id ?? null;
-  selectedAccountTo.value.label = accountToStr(row.accountTo) ?? "Selecione...";
+  console.log(row.account.id);
+  selectedAccount.value = {
+    id: row.account.id,
+    label: accountToStr(row.account),
+  };
+  selectedAccountTo.value = {
+    id: row.accountTo?.id,
+    label: accountToStr(row.accountTo),
+  };
   state.value.date = row.date;
   state.value.miles = row.miles;
   state.value.milesTo = row.milesTo;
