@@ -43,12 +43,14 @@ export async function getTransactions(where) {
     },
   };
   if (where) {
+    console.log("prisma.Transaction.findMany where=" + JSON.stringify(where));
     return await prisma.Transaction.findMany({
       include,
       where,
       orderBy: [{ date: "desc" }],
     });
   }
+  console.log("prisma.Transaction.findMany");
   return await prisma.Transaction.findMany({
     include,
     orderBy: [{ date: "desc" }],

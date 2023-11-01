@@ -520,6 +520,7 @@ const { pending, data: transactions } = await useLazyAsyncData(
     if (selectedAccountFilter.value?.id) {
       query.account = selectedAccountFilter.value.id;
     }
+    console.log("query=" + JSON.stringify(query));
     return $fetch("/api/transactions", { params: query });
   }
 );
