@@ -44,7 +44,7 @@
               >
                 <UAvatar :src="account.company.icon" size="sm" />
                 {{ account.miles }} Milhas ao Médio de R$
-                {{ account.averageMilePrice.toFixed(2) }} CPFs:
+                {{ account.averageMilePrice?.toFixed(2) }} CPFs:
                 {{ account.seatsUsed }} /
                 {{ account.seats }}
               </div>

@@ -55,6 +55,12 @@ async function seed() {
       cpf: { connect: { id: 2 } },
     },
   });
+  const jaqueGol = await prisma.account.create({
+    data: {
+      company: { connect: { id: 4 } },
+      cpf: { connect: { id: 2 } },
+    },
+  });
   await prisma.transaction.createMany({
     data: [
       {
@@ -116,6 +122,45 @@ async function seed() {
         accountId: jaqueLivelo.id,
         date: new Date("2022-08-12"),
         miles: 263,
+        averagePrice: 0,
+      },
+      {
+        type: "TRANSFER",
+        accountId: jaqueLivelo.id,
+        accountToId: jaqueAzul.id,
+        date: new Date("2022-08-15"),
+        miles: 59000,
+        milesTo: 100300,
+        averagePrice: 0,
+      },
+      {
+        type: "MEMBERSHIP",
+        accountId: jaqueLivelo.id,
+        date: new Date("2022-08-21"),
+        miles: 12000,
+        cost: 489.9,
+        averagePrice: (489.9 / 12000) * 1000,
+      },
+      {
+        type: "PARTNER",
+        accountId: jaqueLivelo.id,
+        date: new Date("2022-09-17"),
+        miles: 418,
+        averagePrice: 0,
+      },
+      {
+        type: "MEMBERSHIP",
+        accountId: jaqueLivelo.id,
+        date: new Date("2022-09-21"),
+        miles: 12000,
+        cost: 489.9,
+        averagePrice: (489.9 / 12000) * 1000,
+      },
+      {
+        type: "PARTNER",
+        accountId: jaqueLivelo.id,
+        date: new Date("2022-09-21"),
+        miles: 9000,
         averagePrice: 0,
       },
     ],

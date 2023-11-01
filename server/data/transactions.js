@@ -234,9 +234,8 @@ async function calculate(accountId) {
       if (t.accountId == accountId) {
         // primeiro compra
         averagePrice =
-          (averagePrice * miles +
-            t.averagePriceTransfer * (t.miles + t.milesBuy)) /
-          (t.milesTo + miles);
+          (averagePrice * miles + t.averagePrice * t.milesBuy) /
+          (t.milesBuy + miles);
         miles += t.milesBuy;
         updateAveragePriceTransfer(t.id, averagePrice);
 
