@@ -24,6 +24,13 @@
       </USelectMenu>
       <UButtonGroup>
         <CrudRefreshButton @refresh="refresh" />
+        <UButton
+          to="/transactions/dump"
+          icon="i-heroicons-document-arrow-down"
+          variant="outline"
+          trailing
+          >Dump</UButton
+        >
         <CrudAddButton @add="add" />
       </UButtonGroup>
     </div>
