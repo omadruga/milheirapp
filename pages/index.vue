@@ -31,7 +31,7 @@
                 class="flex gap-2 items-center pb-4 text-lg"
               >
                 <UAvatar :src="account.company.icon" size="sm" />
-                {{ account.miles }} Pontos ao Médio de R$
+                {{ account.miles?.toLocaleString() }} a R$
                 {{ account.averageMilePrice?.toFixed(2) }}
               </div>
             </div>
@@ -43,7 +43,7 @@
                 class="flex gap-2 items-center pb-4 text-xl"
               >
                 <UAvatar :src="account.company.icon" size="sm" />
-                {{ account.miles }} Milhas ao Médio de R$
+                {{ account.miles?.toLocaleString() }} a R$
                 {{ account.averageMilePrice?.toFixed(2) }} CPFs:
                 {{ account.seatsUsed }} /
                 {{ account.seats }}
