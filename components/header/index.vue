@@ -153,11 +153,11 @@ const navigation = [
   { name: "DASHBOARD", href: "/", current: route.name == "" },
   { name: "CPFS", href: "/cpfs", current: route.name == "cpfs" },
   { name: "CONTAS", href: "/accounts", current: route.name == "accounts" },
-  { name: "EMPRESAS", href: "/companies", current: route.name == "companies" },
   {
     name: "TRANSAÇÕES",
     href: "/transactions",
     current: route.name == "transactions",
   },
+  { name: "EMPRESAS", href: "/companies", current: route.name == "companies" },
 ];
 </script>

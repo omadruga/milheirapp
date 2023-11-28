@@ -44,19 +44,21 @@ TODOs
 
 ENHANCEMENTs
 
-- thounand point on numbers
-- currency on money numbers
+- [done] thousand point on numbers
+- [done] currency on money numbers
 - icons on dashboard
 - order selects
 - order dashboard
-- filter transaction
+- [done] filter transaction
 - make table a component
-- make form a component
+- [done] make form a component
 - filter account selection on transactions
   -- flight can only be selected for airline
   -- transfer can only target same cpf account
-- make the code more readable
+- make the code more readable (use more types)
 - make some unit tests
 - make some integration tests
 - make some e2e tests
 - push to github
+- use zod for validation
+- search account as component

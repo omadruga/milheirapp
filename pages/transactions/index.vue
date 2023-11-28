@@ -10,7 +10,7 @@
         @change="refresh"
       >
         <template #label>
-          {{ selectedAccountFilter?.label ?? "Selecione..." }}
+          {{ selectedAccountFilterLabel }}
         </template>
       </USelectMenu>
       <USelectMenu
@@ -31,14 +31,14 @@
           trailing
           >Dump</UButton
         >
-        <CrudAddButton @add="add" />
+        <CrudAddButton @add="form?.add" />
       </UButtonGroup>
     </div>
     <UTable :rows="filteredTransactions" :columns="columns" :loading="pending">
       <template #empty-state>
         <div class="flex flex-col items-center justify-center py-6 gap-3">
           <span class="text-sm">Nenhuma Transação cadastrada</span>
-          <CrudAddButton @click="add" />
+          <CrudAddButton @add="form?.add" />
         </div>
       </template>
       <template #cpf-data="{ row }">
@@ -61,7 +61,11 @@
       </template>
       <template #expire-data="{ row }">
         <span>{{
-          row.expire ? $dayjs().to($dayjs(row.expire)) : "Nunca expira"
+          row.expire
+            ? $dayjs().to($dayjs(row.expire))
+            : canExpire(row.type)
+            ? "Nunca expira"
+            : ""
         }}</span>
       </template>
       <template #actions-data="{ row }">
@@ -73,151 +77,23 @@
             @click="del(row.id)"
             >Excluir</UButton
           >
-          <UButton @click="edit(row)" icon="i-heroicons-pencil-square" trailing
+          <UButton
+            @click="form?.edit(row)"
+            icon="i-heroicons-pencil-square"
+            trailing
             >Alterar</UButton
           >
         </UButtonGroup>
       </template>
     </UTable>
-    <USlideover v-model="isOpen">
-      <UCard
-        class="flex flex-col flex-1"
-        :ui="{
-          body: { base: 'flex-1' },
-          ring: '',
-          divide: 'divide-y divide-gray-100 dark:divide-gray-800',
-        }"
-      >
-        <template #header>
-          <h2>Adicionar Transação</h2>
-        </template>
-        <UForm :validate="validate" :state="state" @submit.prevent="save">
-          <UFormGroup label="Tipo de Transação" name="type" class="mb-4">
-            <USelectMenu v-model="selectedType" :options="types">
-              <template #label>
-                {{ selectedType?.label ?? "Selecione..." }}
-              </template>
-            </USelectMenu>
-          </UFormGroup>
-          <UFormGroup :label="accountLabel" name="account" class="mb-4">
-            <USelectMenu
-              v-model="selectedAccount"
-              :searchable="searchAccount"
-              searchable-placeholder="Pesquisar Conta"
-            >
-              <template #label>
-                {{ selectedAccount.label }}
-              </template>
-            </USelectMenu>
-          </UFormGroup>
-          <UFormGroup
-            v-if="showAccountTo"
-            label="Conta Destino"
-            name="accountTo"
-            class="mb-4"
-          >
-            <USelectMenu
-              v-model="selectedAccountTo"
-              :searchable="searchAccount"
-              searchable-placeholder="Pesquisar Conta"
-            >
-              <template #label>
-                {{ selectedAccountTo.label }}
-              </template>
-            </USelectMenu>
-          </UFormGroup>
-          <div class="flex">
-            <UFormGroup label="Data" name="date" class="mb-4 flex-1">
-              <UPopover :popper="{ placement: 'bottom-start' }">
-                <UButton
-                  icon="i-heroicons-calendar-days-20-solid"
-                  :label="$dayjs(state.date).format('DD/MM/YYYY')"
-                />
-                <template #panel="{ close }">
-                  <DatePicker v-model="state.date" @close="close" />
-                </template>
-              </UPopover>
-            </UFormGroup>
-            <UFormGroup
-              v-if="showExpire"
-              label="Validade"
-              name="expire"
-              class="mb-4 flex-1"
-            >
-              <UPopover :popper="{ placement: 'bottom-start' }">
-                <UButton
-                  icon="i-heroicons-calendar-days-20-solid"
-                  :label="
-                    state.expire
-                      ? $dayjs(state.expire).format('DD/MM/YYYY')
-                      : 'Nunca expira'
-                  "
-                />
-                <template #panel="{ close }">
-                  <DatePicker v-model="state.expire" @close="close" />
-                </template>
-              </UPopover>
-            </UFormGroup>
-          </div>
-          <div class="flex">
-            <UFormGroup :label="milesLabel" name="miles" class="mb-4 flex-1">
-              <UInput v-model="state.miles" />
-            </UFormGroup>
-            <UFormGroup
-              v-if="showMilesTo"
-              label="Milhas Destino"
-              name="milesTo"
-              class="mb-4 flex-1"
-            >
-              <UInput v-model="state.milesTo" />
-            </UFormGroup>
-            <UFormGroup
-              v-if="showCost"
-              label="Custo"
-              name="cost"
-              class="mb-4 flex-1"
-            >
-              <UInput v-model="state.cost" />
-            </UFormGroup>
-            <UFormGroup
-              v-if="showCpfs"
-              label="CPFs"
-              name="cpfs"
-              class="mb-4 flex-1"
-            >
-              <UInput v-model="state.cpfs" />
-            </UFormGroup>
-          </div>
-          <div v-if="showMilesBuy" class="flex">
-            <UFormGroup
-              label="Milhas Compradas"
-              name="milesBuy"
-              class="mb-4 flex-1"
-            >
-              <UInput v-model="state.milesBuy" />
-            </UFormGroup>
-            <UFormGroup label="Custo" name="cost" class="mb-4 flex-1">
-              <UInput v-model="state.cost" />
-            </UFormGroup>
-          </div>
-
-          <UFormGroup label="Observação" name="description" class="mb-4">
-            <UInput v-model="state.description" />
-          </UFormGroup>
-          <UInput v-model="state.id" type="hidden" />
-
-          <div class="flex justify-evenly mt-4">
-            <UButton variant="soft" @click="isOpen = false">Cancelar</UButton>
-            <UButton type="submit">Salvar</UButton>
-          </div>
-        </UForm>
-      </UCard>
-    </USlideover>
+    <FormTransaction ref="form" @refresh="refresh" />
   </div>
 </template>
 <script setup lang="ts">
-import type { FormError, FormSubmitEvent } from "@nuxt/ui/dist/runtime/types";
 const toast = useToast();
+const route = useRoute();
+const form = ref();
+
 const types = [
   {
     id: null,
@@ -253,7 +129,6 @@ const types = [
   },
 ];
 
-const selectedType = ref();
 const selectedTypeFilter = ref();
 const searchAccount = async (q: any) => {
   const accounts = await $fetch("/api/accounts", { params: { q } });
@@ -268,180 +143,23 @@ const searchAccount = async (q: any) => {
         label: accountToStr(account),
       })
     )
-    .filter(Boolean);
+    .filter(Boolean)
+    .sort((a: any, b: any) => {
+      if (a.label.toLowerCase() > b.label.toLowerCase()) return 1;
+      else if (a.label.toLowerCase() < b.label.toLowerCase()) return -1;
+      else return 0;
+    });
 };
-const selectedAccount = ref({});
-const selectedAccountTo = ref({});
 const selectedAccountFilter = ref({});
-const state = ref({
-  id: undefined,
-  date: undefined,
-  miles: undefined,
-  milesTo: undefined,
-  cost: undefined,
-  expire: undefined,
-  description: undefined,
-  cpfs: undefined,
-  milesBuy: undefined,
-});
-const validate = (state: any): FormError[] => {
-  const errors: FormError[] = [];
-  if (!selectedAccount?.value?.id)
-    errors.push({ path: "account", message: "Selecione uma Conta" });
-  if (!selectedType?.value?.id)
-    errors.push({ path: "type", message: "Selecione um Tipo de Transação" });
-  if (!state.date)
-    errors.push({ path: "date", message: "Informe a Data da Transação" });
-  if (!state.miles)
-    errors.push({ path: "miles", message: "Informe a quantidade de Milhas" });
-  if (showCost.value && !state.cost)
-    errors.push({ path: "cost", message: "Informe o Custo" });
-  if (showMilesTo.value && !state.milesTo)
-    errors.push({
-      path: "milesTo",
-      message: "Informe a qtde de Milhas na conta Destino",
-    });
-  if (showMilesBuy.value) {
-    if (!state.milesTo)
-      errors.push({
-        path: "milesTo",
-        message: "Informe a quatidade de Milhas no Destino (com bônus)",
-      });
-    if (!state.milesBuy)
-      errors.push({
-        path: "milesBuy",
-        message: "Informe a quatidade de Milhas compradas (sem bônus)",
-      });
-    if (!state.cost) errors.push({ path: "cost", message: "Informe o custo" });
-  }
-  return errors;
-};
-const showCost = computed(() => {
-  return (
-    selectedType.value?.id == "BUY" || selectedType.value?.id == "MEMBERSHIP"
-  );
-});
-const accountLabel = computed(() => {
-  return selectedType.value?.id == "TRANSFER" ||
-    selectedType.value?.id == "TRANSFER_BUY"
-    ? "Conta Origem"
-    : "Conta";
-});
-const showAccountTo = computed(() => {
-  return (
-    selectedType.value?.id == "TRANSFER" ||
-    selectedType.value?.id == "TRANSFER_BUY"
-  );
-});
-const milesLabel = computed(() => {
-  return selectedType.value?.id == "TRANSFER" ||
-    selectedType.value?.id == "TRANSFER_BUY"
-    ? "Milhas Origem"
-    : "Milhas";
-});
-const showMilesTo = computed(() => {
-  return (
-    selectedType.value?.id == "TRANSFER" ||
-    selectedType.value?.id == "TRANSFER_BUY"
-  );
-});
-const showExpire = computed(() => {
-  return (
-    selectedType.value?.id == "BUY" ||
-    selectedType.value?.id == "MEMBERSHIP" ||
-    selectedType.value?.id == "PARTNER" ||
-    selectedType.value?.id == "TRANSFER" ||
-    selectedType.value?.id == "TRANSFER_BUY"
-  );
-});
-const showCpfs = computed(() => {
-  return selectedType.value?.id == "FLIGHT";
-});
-const showMilesBuy = computed(() => {
-  return selectedType.value?.id == "TRANSFER_BUY";
-});
-
-function add() {
-  state.value.id = undefined;
-  selectedType.value = types[0];
-  selectedAccount.value = { label: "Selecione...", id: 0 };
-  selectedAccountTo.value = { label: "Selecione...", id: 0 };
-  state.value.date = new Date();
-  state.value.miles = undefined;
-  state.value.milesTo = undefined;
-  state.value.cost = undefined;
-  state.value.expire = undefined;
-  state.value.description = undefined;
-  state.value.cpfs = undefined;
-  state.value.milesBuy = undefined;
-  isOpen.value = true;
-}
-
-function edit(row: any) {
-  state.value.id = row.id;
-  selectedType.value = types.find((e) => e.id === row.type);
-  console.log(row.account.id);
-  selectedAccount.value = {
-    id: row.account.id,
-    label: accountToStr(row.account),
-  };
-  selectedAccountTo.value = {
-    id: row.accountTo?.id,
-    label: accountToStr(row.accountTo),
-  };
-  state.value.date = row.date;
-  state.value.miles = row.miles;
-  state.value.milesTo = row.milesTo;
-  state.value.cost = row.cost;
-  state.value.expire = row.expire;
-  state.value.description = row.description;
-  state.value.cpfs = row.cpfs;
-  state.value.milesBuy = row.milesBuy;
-  isOpen.value = true;
-}
-
-async function save(event: FormSubmitEvent<any>) {
-  const { data: result, error } = useFetch("/api/transactions", {
-    method: "POST",
-    body: JSON.stringify({
-      id: state.value.id,
-      type: selectedType.value.id,
-      account: selectedAccount.value.id,
-      accountTo: selectedAccountTo.value?.id,
-      date: state.value.date,
-      miles: state.value.miles,
-      milesTo: state.value?.milesTo,
-      cost: state.value.cost,
-      expire: state.value.expire,
-      description: state.value.description,
-      cpfs: state.value.cpfs,
-      milesBuy: state.value.milesBuy,
-    }),
-  });
-
-  if (!error.value) {
-    if (state.value.id) {
-      toast.add({
-        title: "Conta atualizada com sucesso",
-        icon: "i-heroicons-check-circle",
-      });
-    } else {
-      toast.add({
-        title: "Conta cadastrada com sucesso",
-        icon: "i-heroicons-check-circle",
-      });
-    }
-    refresh();
-    isOpen.value = false;
+const selectedAccountFilterLabel = computed(() => {
+  if (selectedAccountFilter.value.id) {
+    return selectedAccountFilter.value.label;
+  } else if (route.query.accountId) {
+    return route.query.accountLabel;
   } else {
-    toast.add({
-      title: error.value.message,
-      description: error.value.statusMessage,
-      icon: "i-heroicons-x-circle",
-      color: "red",
-    });
+    return "Selecione...";
   }
-}
+});
 
 async function del(id: String) {
   if (confirm("Excluir Transação?")) {
@@ -473,7 +191,6 @@ async function refresh() {
 }
 
 const filter = ref("");
-const isOpen = ref(false);
 const columns = [
   {
     key: "id",
@@ -522,15 +239,25 @@ const columns = [
     key: "actions",
   },
 ];
+
+function canExpire(type: string): boolean {
+  if (type == "FLIGHT" || type == "EXPIRE") return false;
+  return true;
+}
+
 const { pending, data: transactions } = await useLazyAsyncData(
   "transactions",
   () => {
-    var query = {};
+    let query = { type: null, account: null };
     if (selectedTypeFilter.value?.id) {
       query.type = selectedTypeFilter.value.id;
     }
     if (selectedAccountFilter.value?.id) {
       query.account = selectedAccountFilter.value.id;
+    } else if (route.query.accountId) {
+      query.account = route.query.accountId;
+      selectedAccountFilter.value.id = route.query.accountId;
+      selectedAccountFilter.value.label = route.query.accountLabel;
     }
     return $fetch("/api/transactions", { params: query });
   }
@@ -545,18 +272,4 @@ const filteredTransactions = computed(() => {
     });
   });
 });
-
-function accountToStr(account: any) {
-  if (!account) {
-    return null;
-  }
-  return (
-    account.company.name +
-    " - " +
-    account.cpf.name +
-    " (" +
-    account.cpf.cpf +
-    ")"
-  );
-}
 </script>

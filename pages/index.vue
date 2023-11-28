@@ -31,14 +31,36 @@
                 class="flex gap-2 items-center pb-4 text-lg"
               >
                 <UAvatar :src="account.company.icon" size="sm" />
-                {{ account.miles?.toLocaleString() }} a R$
-                {{
-                  account.averageMilePrice?.toLocaleString(undefined, {
-                    currency: "BRL",
-                    maximumFractionDigits: 2,
-                    minimumFractionDigits: 2,
-                  })
-                }}
+                <ULink
+                  :to="`/transactions?accountId=${
+                    account.id
+                  }&accountLabel=${accountToStr({
+                    company: { name: account.company.name },
+                    cpf: { name: item.name, cpf: item.cpf },
+                  })}`"
+                >
+                  {{ account.miles?.toLocaleString() }} a R$
+                  {{
+                    account.averageMilePrice?.toLocaleString(undefined, {
+                      currency: "BRL",
+                      maximumFractionDigits: 2,
+                      minimumFractionDigits: 2,
+                    })
+                  }}
+                </ULink>
+
+                <CrudAddButton
+                  @add="
+                    formTransaction?.add(
+                      account.id,
+                      accountToStr({
+                        company: { name: account.company.name },
+                        cpf: { name: item.name, cpf: item.cpf },
+                      })
+                    )
+                  "
+                  title=""
+                />
               </div>
             </div>
           </div>
@@ -49,24 +71,72 @@
                 class="flex gap-2 items-center pb-4 text-xl"
               >
                 <UAvatar :src="account.company.icon" size="sm" />
-                {{ account.miles?.toLocaleString() }} a R$
-                {{
-                  account.averageMilePrice?.toLocaleString(undefined, {
-                    currency: "BRL",
-                    maximumFractionDigits: 2,
-                    minimumFractionDigits: 2,
-                  })
-                }}
-                CPFs: {{ account.seatsUsed }} /
-                {{ account.seats }}
+                <ULink
+                  :to="`/transactions?accountId=${
+                    account.id
+                  }&accountLabel=${accountToStr({
+                    company: { name: account.company.name },
+                    cpf: { name: item.name, cpf: item.cpf },
+                  })}`"
+                >
+                  {{ account.miles?.toLocaleString() }} a R$
+                  {{
+                    account.averageMilePrice?.toLocaleString(undefined, {
+                      currency: "BRL",
+                      maximumFractionDigits: 2,
+                      minimumFractionDigits: 2,
+                    })
+                  }}
+                  CPFs: {{ account.seatsUsed }} /
+                  {{ account.seats }}
+                </ULink>
+                <CrudAddButton
+                  @add="
+                    formTransaction?.add(
+                      item.id,
+                      item.name,
+                      item.cpf,
+                      item.accounts.map((obj) => obj.companyId)
+                    )
+                  "
+                  title=""
+                />
               </div>
             </div>
           </div>
         </div>
+        <div class="flex flex-col items-center justify-center py-6 gap-3">
+          <CrudAddButton
+            @add="
+              formAccount?.add(
+                item.id,
+                item.name,
+                item.cpf,
+                item.accounts.map((obj) => obj.companyId)
+              )
+            "
+            title="Cadastrar Conta"
+          />
+        </div>
       </div>
     </template>
   </UAccordion>
+  <div class="flex flex-col items-center justify-center py-6 gap-3">
+    <CrudAddButton @add="formCpf?.add" title="Cadastrar CPF" />
+  </div>
+
+  <FormCpf ref="formCpf" @refresh="refresh" />
+  <FormAccount ref="formAccount" @refresh="refresh" />
+  <FormTransaction ref="formTransaction" @refresh="refresh" />
 </template>
 <script setup>
-const cpfs = await $fetch("/api/");
+const { pending, data: cpfs } = await useLazyAsyncData("cpfs", () => {
+  return $fetch("/api/");
+});
+const formCpf = ref();
+const formAccount = ref();
+const formTransaction = ref();
+async function refresh() {
+  await refreshNuxtData("cpfs");
+}
 </script>
