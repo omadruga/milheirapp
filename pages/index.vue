@@ -133,6 +133,7 @@
   <FormTransaction ref="formTransaction" @refresh="refresh" />
 </template>
 <script setup>
+const { loggedIn, user, session, clear } = useUserSession();
 const { pending, data: cpfs } = await useLazyAsyncData("cpfs", () => {
   return $fetch("/api/");
 });

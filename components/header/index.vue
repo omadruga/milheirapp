@@ -63,7 +63,7 @@
               >
                 <span class="absolute -inset-1.5" />
                 <span class="sr-only">Abrir menu do perfil</span>
-                <Gravatar email="omadruga@gmail.com" />
+                <Gravatar email="omadruga@gmail.com" size="60" />
               </MenuButton>
             </div>
             <transition
