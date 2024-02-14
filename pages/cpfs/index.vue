@@ -16,6 +16,7 @@
       <template #actions-data="{ row }">
         <UButtonGroup>
           <UButton
+            v-if="loggedIn"
             color="red"
             variant="soft"
             icon="i-heroicons-trash"
@@ -23,6 +24,7 @@
             >Excluir</UButton
           >
           <UButton
+            v-if="loggedIn"
             @click="form?.edit(row.id, row.name, row.cpf)"
             icon="i-heroicons-pencil-square"
             trailing
@@ -31,10 +33,11 @@
         </UButtonGroup>
       </template>
     </UTable>
-    <FormCpf ref="form" @refresh="refresh" />
+    <FormCpf v-if="loggedIn" ref="form" @refresh="refresh" />
   </div>
 </template>
 <script setup lang="ts">
+const { loggedIn, user, session, clear } = useUserSession();
 const toast = useToast();
 const form = ref();
 

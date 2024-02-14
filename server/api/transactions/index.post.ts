@@ -5,6 +5,7 @@ import {
 } from "../../data/transactions.js";
 
 export default defineEventHandler(async (event: any) => {
+  const session = await requireUserSession(event);
   const {
     id,
     type,

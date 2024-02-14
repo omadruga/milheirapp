@@ -8,11 +8,12 @@
     />
     <UButtonGroup>
       <CrudRefreshButton @refresh="$emit('refresh')" />
-      <CrudAddButton @add="$emit('add')" />
+      <CrudAddButton v-if="loggedIn" @add="$emit('add')" />
     </UButtonGroup>
   </div>
 </template>
 <script setup>
+const { loggedIn, user, session, clear } = useUserSession();
 defineProps(["modelValue", "title"]);
 defineEmits(["update:modelValue", "add", "refresh"]);
 </script>

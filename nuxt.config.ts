@@ -1,7 +1,7 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   devtools: { enabled: true },
-  modules: ["@nuxt/ui", "dayjs-nuxt"],
+  modules: ["@nuxt/ui", "dayjs-nuxt", "nuxt-auth-utils", "nuxt-gravatar"],
   dayjs: {
     locales: ["pt-br"],
     plugins: ["relativeTime", "utc", "timezone"],
@@ -26,5 +26,10 @@ export default defineNuxtConfig({
       },
     ],
     defaultTimezone: "America/Sao_Paulo",
+  },
+  app: {
+    head: {
+      title: "Milheirapp",
+    },
   },
 });

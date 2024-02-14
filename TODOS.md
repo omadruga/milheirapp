@@ -34,7 +34,6 @@ TODOs
 - Model User/Role
 - Role Guest, User, Admin
 - Restrict pages based on role
-- Create CRUD for User with Role
 - Create Auth for User
 - Create Profile for User
 - SEO Thing
@@ -50,7 +49,6 @@ ENHANCEMENTs
 - order selects
 - order dashboard
 - [done] filter transaction
-- make table a component
 - [done] make form a component
 - filter account selection on transactions
   -- flight can only be selected for airline

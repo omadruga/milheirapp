@@ -22,6 +22,7 @@
       <template #actions-data="{ row }">
         <UButtonGroup>
           <UButton
+            v-if="loggedIn"
             color="red"
             variant="soft"
             icon="i-heroicons-trash"
@@ -29,6 +30,7 @@
             >Excluir</UButton
           >
           <UButton
+            v-if="loggedIn"
             @click="edit(row.id, row.name, row.icon, row.type)"
             icon="i-heroicons-pencil-square"
             trailing
@@ -37,7 +39,7 @@
         </UButtonGroup>
       </template>
     </UTable>
-    <USlideover v-model="isOpen">
+    <USlideover v-if="loggedIn" v-model="isOpen">
       <UCard
         class="flex flex-col flex-1"
         :ui="{
@@ -76,6 +78,7 @@
 </template>
 <script setup lang="ts">
 import type { FormError, FormSubmitEvent } from "@nuxt/ui/dist/runtime/types";
+const { loggedIn, user, session, clear } = useUserSession();
 const toast = useToast();
 const types = [
   {

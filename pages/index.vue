@@ -50,6 +50,7 @@
                 </ULink>
 
                 <CrudAddButton
+                  v-if="loggedIn"
                   @add="
                     formTransaction?.add(
                       account.id,
@@ -91,6 +92,7 @@
                   {{ account.seats }}
                 </ULink>
                 <CrudAddButton
+                  v-if="loggedIn"
                   @add="
                     formTransaction?.add(
                       item.id,
@@ -107,6 +109,7 @@
         </div>
         <div class="flex flex-col items-center justify-center py-6 gap-3">
           <CrudAddButton
+            v-if="loggedIn"
             @add="
               formAccount?.add(
                 item.id,
@@ -122,7 +125,7 @@
     </template>
   </UAccordion>
   <div class="flex flex-col items-center justify-center py-6 gap-3">
-    <CrudAddButton @add="formCpf?.add" title="Cadastrar CPF" />
+    <CrudAddButton v-if="loggedIn" @add="formCpf?.add" title="Cadastrar CPF" />
   </div>
 
   <FormCpf ref="formCpf" @refresh="refresh" />
