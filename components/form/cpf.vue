@@ -11,7 +11,7 @@
       <template #header>
         <h2>Adicionar CPF</h2>
       </template>
-      <UForm :validate="validate" :state="state" @submit.prevent="save">
+      <UForm :validate="validate" :state="state" @submit="save">
         <UFormGroup label="Nome" name="name" class="mb-4">
           <UInput v-model="state.name" />
         </UFormGroup>

@@ -11,7 +11,7 @@
       <template #header>
         <h2>Adicionar Conta</h2>
       </template>
-      <UForm :validate="validate" :state="state" @submit.prevent="save">
+      <UForm :validate="validate" :state="state" @submit="save">
         <UFormGroup label="CPF" name="cpf" class="mb-4">
           <USelectMenu
             v-model="selectedCpf"
