@@ -15,6 +15,21 @@
       </USelectMenu>
     </UFormGroup>
 
+    <div v-if="isCarrinho" class="mb-4 border border-gray-200 dark:border-gray-700 rounded p-3">
+      <div class="text-sm font-medium mb-2">Compra no carrinho</div>
+      <div class="flex gap-2">
+        <UFormGroup label="Milhas" class="flex-1">
+          <UInput v-model.number="buy.miles" type="number" min="0" step="1000" />
+        </UFormGroup>
+        <UFormGroup label="Custo total (R$)" class="flex-1">
+          <UInput v-model.number="buy.cost" type="number" min="0" step="0.01" />
+        </UFormGroup>
+      </div>
+      <div v-if="buyPricePerK > 0" class="text-xs text-gray-500 mt-2">
+        Preço da compra: R$ {{ fmtMoney(buyPricePerK) }} / 1000 milhas
+      </div>
+    </div>
+
     <div class="mb-4">
       <div class="text-sm font-medium mb-2">Por cia destino</div>
       <div class="space-y-2">
@@ -24,7 +39,7 @@
           class="flex items-center gap-2"
         >
           <UAvatar v-if="a.icon" :src="a.icon" size="2xs" />
-          <span class="w-16 text-sm">{{ a.label }}</span>
+          <span class="w-12 text-sm">{{ a.label }}</span>
           <div class="flex-1">
             <UInput
               v-model.number="inputs[a.value].bonus"
@@ -62,13 +77,21 @@
         class="border border-gray-200 dark:border-gray-700 rounded p-3"
       >
         <div class="font-semibold mb-2">{{ r.cpf.name }}</div>
-        <div v-if="r.totalMiles === 0" class="text-sm text-gray-500">
+        <div v-if="r.existingMiles === 0 && !isCarrinho" class="text-sm text-gray-500">
           Sem milhas em programa.
         </div>
         <template v-else>
           <div class="text-sm mb-2 space-y-1">
             <div class="flex justify-between">
               <span class="text-gray-500">Milhas programa:</span>
+              <span>{{ fmtMiles(r.existingMiles) }}</span>
+            </div>
+            <div v-if="isCarrinho" class="flex justify-between">
+              <span class="text-gray-500">+ Compra carrinho:</span>
+              <span>{{ fmtMiles(buy.miles || 0) }}</span>
+            </div>
+            <div v-if="isCarrinho" class="flex justify-between font-semibold">
+              <span class="text-gray-500">= Total:</span>
               <span>{{ fmtMiles(r.totalMiles) }}</span>
             </div>
             <div class="flex justify-between">
@@ -177,15 +200,27 @@ const props = defineProps({
 });
 
 const paths = [
-  { label: "Transferência bonificada simples", value: "TRANSFER_BONIFICADA" },
+  { label: "Transferência bonificada simples", value: "SIMPLE" },
+  { label: "Transferência compra carrinho", value: "CARRINHO" },
 ];
 const path = ref(paths[0]);
+const isCarrinho = computed(() => path.value.value === "CARRINHO");
 
+const buy = reactive({ miles: 0, cost: 0 });
+const buyPricePerK = computed(() =>
+  buy.miles > 0 ? (buy.cost / buy.miles) * 1000 : 0
+);
+
+const EXCLUDED_AIRLINES = new Set(["Azul", "TAP"]);
 const airlines = computed(() => {
   const seen = new Map();
   for (const cpf of props.cpfs ?? []) {
     for (const acc of cpf.accounts ?? []) {
-      if (acc.company?.type === "AIRLINE" && !seen.has(acc.company.name)) {
+      if (
+        acc.company?.type === "AIRLINE" &&
+        !EXCLUDED_AIRLINES.has(acc.company.name) &&
+        !seen.has(acc.company.name)
+      ) {
         seen.set(acc.company.name, {
           label: acc.company.name,
           value: acc.company.name,
@@ -204,13 +239,12 @@ watchEffect(() => {
   }
 });
 
-function computeByAirline(totalMiles, avgPrice) {
-  const cost = (totalMiles * avgPrice) / 1000;
+function computeByAirline(totalMiles, totalCost) {
   const rows = airlines.value.map((a) => {
     const inp = inputs[a.value] ?? { bonus: 0, sale: 0 };
     const milesAfterBonus = totalMiles * (1 + (inp.bonus || 0) / 100);
     const saleValue = (milesAfterBonus * (inp.sale || 0)) / 1000;
-    const profit = saleValue - cost;
+    const profit = saleValue - totalCost;
     const margin = saleValue > 0 ? (profit / saleValue) * 100 : 0;
     return { airline: a.label, milesAfterBonus, saleValue, profit, margin };
   });
@@ -222,19 +256,25 @@ function computeByAirline(totalMiles, avgPrice) {
 }
 
 const results = computed(() => {
+  const buyMiles = isCarrinho.value ? buy.miles || 0 : 0;
+  const buyCost = isCarrinho.value ? buy.cost || 0 : 0;
+
   return (props.cpfs ?? []).map((cpf) => {
     const programs = (cpf.accounts ?? []).filter(
       (a) => a.company?.type === "PROGRAM"
     );
-    const totalMiles = programs.reduce((s, a) => s + (a.miles ?? 0), 0);
-    const totalCost = programs.reduce(
-      (s, a) => s + (a.miles ?? 0) * (a.averageMilePrice ?? 0),
+    const existingMiles = programs.reduce((s, a) => s + (a.miles ?? 0), 0);
+    const existingCostTotal = programs.reduce(
+      (s, a) => s + ((a.miles ?? 0) * (a.averageMilePrice ?? 0)) / 1000,
       0
     );
-    const avgPrice = totalMiles > 0 ? totalCost / totalMiles : 0;
-    const cost = (totalMiles * avgPrice) / 1000;
-    const byAirline = computeByAirline(totalMiles, avgPrice);
-    return { cpf, totalMiles, avgPrice, cost, byAirline };
+
+    const totalMiles = existingMiles + buyMiles;
+    const cost = existingCostTotal + buyCost;
+    const avgPrice = totalMiles > 0 ? (cost / totalMiles) * 1000 : 0;
+
+    const byAirline = computeByAirline(totalMiles, cost);
+    return { cpf, existingMiles, totalMiles, avgPrice, cost, byAirline };
   });
 });
 
@@ -242,7 +282,7 @@ const totals = computed(() => {
   const totalMiles = results.value.reduce((s, r) => s + r.totalMiles, 0);
   const cost = results.value.reduce((s, r) => s + r.cost, 0);
   const avgPrice = totalMiles > 0 ? (cost / totalMiles) * 1000 : 0;
-  const byAirline = computeByAirline(totalMiles, avgPrice);
+  const byAirline = computeByAirline(totalMiles, cost);
   return { totalMiles, avgPrice, cost, byAirline };
 });
 
