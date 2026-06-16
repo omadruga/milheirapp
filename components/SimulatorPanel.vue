@@ -25,9 +25,8 @@
           <UInput v-model.number="buy.pricek" type="number" min="0" step="0.01" />
         </UFormGroup>
       </div>
-      <UCheckbox v-model="buy.pix" label="PIX 5% off" />
-      <div v-if="buy.pricek > 0" class="text-xs text-gray-500 mt-2">
-        Preço efetivo da compra: R$ {{ fmtMoney(effectiveBuyPricek) }} / 1000 milhas
+      <div class="text-xs text-gray-400">
+        O preço por milheiro varia com a meta — consulte o Livelo p/ o volume escolhido. Pagamento em 12x sem juros (PIX desconsiderado).
       </div>
     </div>
 
@@ -238,10 +237,7 @@ const paths = [
 const path = ref(paths[0]);
 const isCarrinho = computed(() => path.value.value === "CARRINHO");
 
-const buy = reactive({ target: 0, pricek: 0, pix: false });
-const effectiveBuyPricek = computed(() =>
-  buy.pix ? (buy.pricek || 0) * 0.95 : buy.pricek || 0
-);
+const buy = reactive({ target: 0, pricek: 0 });
 
 const EXCLUDED_AIRLINES = new Set(["Azul", "TAP"]);
 const airlines = computed(() => {
@@ -318,7 +314,7 @@ const results = computed(() => {
       const target = Math.floor((buy.target || 0) / 1000) * 1000;
       const useExisting = Math.min(availableFloored, target);
       const buyMiles = Math.max(target - useExisting, 0);
-      const buyCost = (buyMiles * effectiveBuyPricek.value) / 1000;
+      const buyCost = (buyMiles * (buy.pricek || 0)) / 1000;
       const useExistingCost = (useExisting * avgPriceExisting) / 1000;
       const totalCost = useExistingCost + buyCost;
       const totalMiles = target;
