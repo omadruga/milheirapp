@@ -90,9 +90,13 @@
               <span class="text-gray-500">+ Compra carrinho:</span>
               <span>{{ fmtMiles(buy.miles || 0) }}</span>
             </div>
-            <div v-if="isCarrinho" class="flex justify-between font-semibold">
-              <span class="text-gray-500">= Total:</span>
+            <div class="flex justify-between font-semibold">
+              <span class="text-gray-500">Transferível (múltiplo de 1.000):</span>
               <span>{{ fmtMiles(r.totalMiles) }}</span>
+            </div>
+            <div v-if="r.leftover > 0" class="flex justify-between text-xs text-amber-600">
+              <span>Sobra (fica no programa):</span>
+              <span>{{ fmtMiles(r.leftover) }}</span>
             </div>
             <div class="flex justify-between">
               <span class="text-gray-500">Custo médio:</span>
@@ -148,9 +152,19 @@
         class="border-2 border-gray-300 dark:border-gray-600 rounded p-3 bg-gray-50 dark:bg-gray-800"
       >
         <div class="font-semibold mb-2">Total combinado (todos CPFs)</div>
-        <div class="text-sm mb-2 flex justify-between">
-          <span class="text-gray-500">Milhas + Custo:</span>
-          <span>{{ fmtMiles(totals.totalMiles) }} • R$ {{ fmtMoney(totals.cost) }}</span>
+        <div class="text-sm mb-2 space-y-1">
+          <div class="flex justify-between">
+            <span class="text-gray-500">Transferível:</span>
+            <span>{{ fmtMiles(totals.totalMiles) }}</span>
+          </div>
+          <div v-if="totals.leftover > 0" class="flex justify-between text-xs text-amber-600">
+            <span>Sobra:</span>
+            <span>{{ fmtMiles(totals.leftover) }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-500">Custo total:</span>
+            <span>R$ {{ fmtMoney(totals.cost) }}</span>
+          </div>
         </div>
         <table class="w-full text-xs">
           <thead class="text-gray-500">
@@ -255,6 +269,9 @@ function computeByAirline(totalMiles, totalCost) {
   return rows;
 }
 
+// Transferências só podem ser em múltiplos de 1000.
+// Por programa: floor(saldo / 1000) * 1000. Sobra fica retida.
+// Carrinho: a compra entra ANTES do floor, na conta Livelo.
 const results = computed(() => {
   const buyMiles = isCarrinho.value ? buy.miles || 0 : 0;
   const buyCost = isCarrinho.value ? buy.cost || 0 : 0;
@@ -263,27 +280,43 @@ const results = computed(() => {
     const programs = (cpf.accounts ?? []).filter(
       (a) => a.company?.type === "PROGRAM"
     );
-    const existingMiles = programs.reduce((s, a) => s + (a.miles ?? 0), 0);
-    const existingCostTotal = programs.reduce(
-      (s, a) => s + ((a.miles ?? 0) * (a.averageMilePrice ?? 0)) / 1000,
-      0
-    );
 
-    const totalMiles = existingMiles + buyMiles;
-    const cost = existingCostTotal + buyCost;
+    let existingMiles = 0;
+    let totalMiles = 0;
+    let cost = 0;
+    let leftover = 0;
+
+    for (const acc of programs) {
+      existingMiles += acc.miles ?? 0;
+
+      let mi = acc.miles ?? 0;
+      let co = ((acc.miles ?? 0) * (acc.averageMilePrice ?? 0)) / 1000;
+      if (isCarrinho.value && acc.company?.name === "Livelo") {
+        mi += buyMiles;
+        co += buyCost;
+      }
+      const transferable = Math.floor(mi / 1000) * 1000;
+      const accAvgPrice = mi > 0 ? (co / mi) * 1000 : 0;
+      const transferableCost = (transferable * accAvgPrice) / 1000;
+
+      totalMiles += transferable;
+      cost += transferableCost;
+      leftover += mi - transferable;
+    }
+
     const avgPrice = totalMiles > 0 ? (cost / totalMiles) * 1000 : 0;
-
     const byAirline = computeByAirline(totalMiles, cost);
-    return { cpf, existingMiles, totalMiles, avgPrice, cost, byAirline };
+    return { cpf, existingMiles, totalMiles, avgPrice, cost, leftover, byAirline };
   });
 });
 
 const totals = computed(() => {
   const totalMiles = results.value.reduce((s, r) => s + r.totalMiles, 0);
   const cost = results.value.reduce((s, r) => s + r.cost, 0);
+  const leftover = results.value.reduce((s, r) => s + r.leftover, 0);
   const avgPrice = totalMiles > 0 ? (cost / totalMiles) * 1000 : 0;
   const byAirline = computeByAirline(totalMiles, cost);
-  return { totalMiles, avgPrice, cost, byAirline };
+  return { totalMiles, avgPrice, cost, leftover, byAirline };
 });
 
 function fmtMiles(n) {
