@@ -1,6 +1,7 @@
 import { getTransactions } from "~/server/data/transactions";
 
 export default defineEventHandler(async (event) => {
+  await requireUserSession(event);
   const params = getQuery(event);
   const type = params.type;
   const account = params.account;

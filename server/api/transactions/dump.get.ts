@@ -1,7 +1,7 @@
 import { getTransactions } from "~/server/data/transactions";
 
 export default defineEventHandler(async (event) => {
-  console.log("dump");
+  await requireUserSession(event);
   const transactions = await getTransactions();
   return transactions;
 });

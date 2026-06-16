@@ -2,7 +2,7 @@
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
     <div class="lg:col-span-2">
       <UAccordion
-        :items="cpfs"
+        :items="cpfs ?? []"
         multiple
         default-open
         :ui="{ item: { padding: 'pt-0 pb-3' } }"
