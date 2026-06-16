@@ -66,9 +66,9 @@ export async function createTransaction(data, account, accountTo) {
       data: data,
     });
 
-    calculate(account);
+    await calculate(account);
     if (accountTo) {
-      calculate(accountTo);
+      await calculate(accountTo);
     }
 
     return result;
@@ -99,9 +99,9 @@ export async function updateTransaction(id, data, account, accountTo) {
       data,
     });
 
-    calculate(account);
+    await calculate(account);
     if (accountTo) {
-      calculate(accountTo);
+      await calculate(accountTo);
     }
 
     return result;
@@ -148,15 +148,22 @@ export async function deleteTransaction(id) {
       id,
     },
   });
-  calculate(result.accountId);
+  await calculate(result.accountId);
   if (result.accountToId) {
-    calculate(result.accountToId);
+    await calculate(result.accountToId);
   }
   return result;
 }
 
 async function calculate(accountId) {
   const dayjs = useDayjs();
+
+  const account = await prisma.Account.findUnique({
+    where: { id: accountId },
+    include: { company: { select: { type: true } } },
+  });
+  if (!account) return;
+  const companyType = account.company.type;
 
   const transactions = await prisma.Transaction.findMany({
     include: {
@@ -319,10 +326,10 @@ async function calculate(accountId) {
   if (miles == 0) {
     averagePrice = 0;
   }
-  if (t.account.company.type == "PROGRAM") {
-    updateAccountMilePrice(accountId, miles, averagePrice);
-  } else if (t.account.company.type == "AIRLINE") {
-    updateAccountMilePriceSeats(
+  if (companyType == "PROGRAM") {
+    await updateAccountMilePrice(accountId, miles, averagePrice);
+  } else if (companyType == "AIRLINE") {
+    await updateAccountMilePriceSeats(
       accountId,
       miles,
       averagePrice,
