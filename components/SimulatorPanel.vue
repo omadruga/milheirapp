@@ -111,7 +111,7 @@
             <thead class="text-gray-500">
               <tr>
                 <th class="text-left py-1">Cia</th>
-                <th class="text-right py-1">Após bonus</th>
+                <th class="text-right py-1">Vendável</th>
                 <th class="text-right py-1">Venda</th>
                 <th class="text-right py-1">Lucro</th>
                 <th class="text-right py-1">Marg.</th>
@@ -127,7 +127,7 @@
                 ]"
               >
                 <td class="py-1">{{ row.airline }}</td>
-                <td class="text-right">{{ fmtMiles(row.milesAfterBonus) }}</td>
+                <td class="text-right">{{ fmtMiles(row.sellable) }}</td>
                 <td class="text-right">R$ {{ fmtMoney(row.saleValue) }}</td>
                 <td
                   class="text-right"
@@ -257,10 +257,12 @@ function computeByAirline(totalMiles, totalCost) {
   const rows = airlines.value.map((a) => {
     const inp = inputs[a.value] ?? { bonus: 0, sale: 0 };
     const milesAfterBonus = totalMiles * (1 + (inp.bonus || 0) / 100);
-    const saleValue = (milesAfterBonus * (inp.sale || 0)) / 1000;
+    // Venda também em múltiplos de 1.000
+    const sellable = Math.floor(milesAfterBonus / 1000) * 1000;
+    const saleValue = (sellable * (inp.sale || 0)) / 1000;
     const profit = saleValue - totalCost;
     const margin = saleValue > 0 ? (profit / saleValue) * 100 : 0;
-    return { airline: a.label, milesAfterBonus, saleValue, profit, margin };
+    return { airline: a.label, sellable, saleValue, profit, margin };
   });
   const maxProfit = Math.max(...rows.map((r) => r.profit), 0);
   if (maxProfit > 0) {
