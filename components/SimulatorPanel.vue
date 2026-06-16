@@ -17,16 +17,17 @@
 
     <div v-if="isCarrinho" class="mb-4 border border-gray-200 dark:border-gray-700 rounded p-3">
       <div class="text-sm font-medium mb-2">Compra no carrinho</div>
-      <div class="flex gap-2">
-        <UFormGroup label="Milhas" class="flex-1">
-          <UInput v-model.number="buy.miles" type="number" min="0" step="1000" />
+      <div class="flex gap-2 mb-2">
+        <UFormGroup label="Meta (milhas)" class="flex-1">
+          <UInput v-model.number="buy.target" type="number" min="0" step="1000" />
         </UFormGroup>
-        <UFormGroup label="Custo total (R$)" class="flex-1">
-          <UInput v-model.number="buy.cost" type="number" min="0" step="0.01" />
+        <UFormGroup label="Preço (R$/1000)" class="flex-1">
+          <UInput v-model.number="buy.pricek" type="number" min="0" step="0.01" />
         </UFormGroup>
       </div>
-      <div v-if="buyPricePerK > 0" class="text-xs text-gray-500 mt-2">
-        Preço da compra: R$ {{ fmtMoney(buyPricePerK) }} / 1000 milhas
+      <UCheckbox v-model="buy.pix" label="PIX 5% off" />
+      <div v-if="buy.pricek > 0" class="text-xs text-gray-500 mt-2">
+        Preço efetivo da compra: R$ {{ fmtMoney(effectiveBuyPricek) }} / 1000 milhas
       </div>
     </div>
 
@@ -77,8 +78,8 @@
         class="border border-gray-200 dark:border-gray-700 rounded p-3"
       >
         <div class="font-semibold mb-2">{{ r.cpf.name }}</div>
-        <div v-if="r.existingMiles === 0 && !isCarrinho" class="text-sm text-gray-500">
-          Sem milhas em programa.
+        <div v-if="r.totalMiles === 0" class="text-sm text-gray-500">
+          {{ isCarrinho ? "Defina uma meta de transferência." : "Sem milhas em programa." }}
         </div>
         <template v-else>
           <div class="text-sm mb-2 space-y-1">
@@ -86,20 +87,37 @@
               <span class="text-gray-500">Milhas programa:</span>
               <span>{{ fmtMiles(r.existingMiles) }}</span>
             </div>
-            <div v-if="isCarrinho" class="flex justify-between">
-              <span class="text-gray-500">+ Compra carrinho:</span>
-              <span>{{ fmtMiles(buy.miles || 0) }}</span>
+            <div class="flex justify-between">
+              <span class="text-gray-500">Disponível (múltiplos de 1.000):</span>
+              <span>{{ fmtMiles(r.availableFloored) }}</span>
             </div>
-            <div class="flex justify-between font-semibold">
-              <span class="text-gray-500">Transferível (múltiplo de 1.000):</span>
+            <div v-if="r.floorLeftover > 0" class="flex justify-between text-xs text-amber-600">
+              <span>Sobra fixa (floor):</span>
+              <span>{{ fmtMiles(r.floorLeftover) }}</span>
+            </div>
+            <template v-if="isCarrinho">
+              <div class="flex justify-between mt-1">
+                <span class="text-gray-500">Meta:</span>
+                <span>{{ fmtMiles(r.target) }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-500">→ Usar existente:</span>
+                <span>{{ fmtMiles(r.useExisting) }} (R$ {{ fmtMoney(r.useExistingCost) }})</span>
+              </div>
+              <div v-if="r.buyMiles > 0" class="flex justify-between">
+                <span class="text-gray-500">→ Comprar:</span>
+                <span>{{ fmtMiles(r.buyMiles) }} (R$ {{ fmtMoney(r.buyCost) }})</span>
+              </div>
+              <div v-else-if="r.target > 0 && r.target < r.availableFloored" class="flex justify-between text-xs text-gray-400">
+                <span>(meta menor que disponível — carrinho não usado)</span>
+              </div>
+            </template>
+            <div class="flex justify-between font-semibold border-t border-gray-200 dark:border-gray-700 pt-1 mt-1">
+              <span class="text-gray-500">Transferível p/ cia:</span>
               <span>{{ fmtMiles(r.totalMiles) }}</span>
             </div>
-            <div v-if="r.leftover > 0" class="flex justify-between text-xs text-amber-600">
-              <span>Sobra (fica no programa):</span>
-              <span>{{ fmtMiles(r.leftover) }}</span>
-            </div>
             <div class="flex justify-between">
-              <span class="text-gray-500">Custo médio:</span>
+              <span class="text-gray-500">Custo médio efetivo:</span>
               <span>R$ {{ fmtMoney(r.avgPrice) }}/1000</span>
             </div>
             <div class="flex justify-between">
@@ -220,9 +238,9 @@ const paths = [
 const path = ref(paths[0]);
 const isCarrinho = computed(() => path.value.value === "CARRINHO");
 
-const buy = reactive({ miles: 0, cost: 0 });
-const buyPricePerK = computed(() =>
-  buy.miles > 0 ? (buy.cost / buy.miles) * 1000 : 0
+const buy = reactive({ target: 0, pricek: 0, pix: false });
+const effectiveBuyPricek = computed(() =>
+  buy.pix ? (buy.pricek || 0) * 0.95 : buy.pricek || 0
 );
 
 const EXCLUDED_AIRLINES = new Set(["Azul", "TAP"]);
@@ -271,54 +289,90 @@ function computeByAirline(totalMiles, totalCost) {
   return rows;
 }
 
-// Transferências só podem ser em múltiplos de 1000.
-// Por programa: floor(saldo / 1000) * 1000. Sobra fica retida.
-// Carrinho: a compra entra ANTES do floor, na conta Livelo.
+// Transferências só ocorrem em múltiplos de 1.000.
+// SIMPLE: usa tudo disponível (após floor por programa).
+// CARRINHO: meta arbitrária; usa o máximo do existente disponível, compra o resto a R$/1000.
 const results = computed(() => {
-  const buyMiles = isCarrinho.value ? buy.miles || 0 : 0;
-  const buyCost = isCarrinho.value ? buy.cost || 0 : 0;
-
   return (props.cpfs ?? []).map((cpf) => {
     const programs = (cpf.accounts ?? []).filter(
       (a) => a.company?.type === "PROGRAM"
     );
 
     let existingMiles = 0;
-    let totalMiles = 0;
-    let cost = 0;
-    let leftover = 0;
-
+    let existingCost = 0;
+    let availableFloored = 0;
+    let floorLeftover = 0;
     for (const acc of programs) {
-      existingMiles += acc.miles ?? 0;
+      const mi = acc.miles ?? 0;
+      const ap = acc.averageMilePrice ?? 0;
+      const fl = Math.floor(mi / 1000) * 1000;
+      existingMiles += mi;
+      existingCost += (mi * ap) / 1000;
+      availableFloored += fl;
+      floorLeftover += mi - fl;
+    }
+    const avgPriceExisting =
+      existingMiles > 0 ? (existingCost / existingMiles) * 1000 : 0;
 
-      let mi = acc.miles ?? 0;
-      let co = ((acc.miles ?? 0) * (acc.averageMilePrice ?? 0)) / 1000;
-      if (isCarrinho.value && acc.company?.name === "Livelo") {
-        mi += buyMiles;
-        co += buyCost;
-      }
-      const transferable = Math.floor(mi / 1000) * 1000;
-      const accAvgPrice = mi > 0 ? (co / mi) * 1000 : 0;
-      const transferableCost = (transferable * accAvgPrice) / 1000;
-
-      totalMiles += transferable;
-      cost += transferableCost;
-      leftover += mi - transferable;
+    if (isCarrinho.value) {
+      const target = Math.floor((buy.target || 0) / 1000) * 1000;
+      const useExisting = Math.min(availableFloored, target);
+      const buyMiles = Math.max(target - useExisting, 0);
+      const buyCost = (buyMiles * effectiveBuyPricek.value) / 1000;
+      const useExistingCost = (useExisting * avgPriceExisting) / 1000;
+      const totalCost = useExistingCost + buyCost;
+      const totalMiles = target;
+      const avgPrice = totalMiles > 0 ? (totalCost / totalMiles) * 1000 : 0;
+      const byAirline = computeByAirline(totalMiles, totalCost);
+      return {
+        cpf,
+        existingMiles,
+        availableFloored,
+        floorLeftover,
+        target,
+        useExisting,
+        useExistingCost,
+        buyMiles,
+        buyCost,
+        totalMiles,
+        avgPrice,
+        cost: totalCost,
+        byAirline,
+      };
     }
 
-    const avgPrice = totalMiles > 0 ? (cost / totalMiles) * 1000 : 0;
-    const byAirline = computeByAirline(totalMiles, cost);
-    return { cpf, existingMiles, totalMiles, avgPrice, cost, leftover, byAirline };
+    // SIMPLE: usa tudo o disponível por programa (custo proporcional por programa)
+    let totalMiles = 0;
+    let totalCost = 0;
+    for (const acc of programs) {
+      const mi = acc.miles ?? 0;
+      const ap = acc.averageMilePrice ?? 0;
+      const fl = Math.floor(mi / 1000) * 1000;
+      totalMiles += fl;
+      totalCost += (fl * ap) / 1000;
+    }
+    const avgPrice = totalMiles > 0 ? (totalCost / totalMiles) * 1000 : 0;
+    const byAirline = computeByAirline(totalMiles, totalCost);
+    return {
+      cpf,
+      existingMiles,
+      availableFloored,
+      floorLeftover,
+      totalMiles,
+      avgPrice,
+      cost: totalCost,
+      byAirline,
+    };
   });
 });
 
 const totals = computed(() => {
   const totalMiles = results.value.reduce((s, r) => s + r.totalMiles, 0);
   const cost = results.value.reduce((s, r) => s + r.cost, 0);
-  const leftover = results.value.reduce((s, r) => s + r.leftover, 0);
+  const floorLeftover = results.value.reduce((s, r) => s + (r.floorLeftover || 0), 0);
   const avgPrice = totalMiles > 0 ? (cost / totalMiles) * 1000 : 0;
   const byAirline = computeByAirline(totalMiles, cost);
-  return { totalMiles, avgPrice, cost, leftover, byAirline };
+  return { totalMiles, avgPrice, cost, leftover: floorLeftover, byAirline };
 });
 
 function fmtMiles(n) {
