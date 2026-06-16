@@ -1,3 +1,8 @@
+# Infra
+
+- Application is deployed on Vercel in account omadruga@gmail.com, logged with email.
+- Database is Postgresql hosted on the same vercel account.
+
 # Sweets
 
 - Nuxt autoimport is realy nice.
