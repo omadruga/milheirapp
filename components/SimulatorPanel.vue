@@ -189,65 +189,6 @@
         </template>
       </div>
 
-      <div
-        v-if="!isCarrinho && totals.totalMiles > 0"
-        class="border-2 border-gray-300 dark:border-gray-600 rounded p-3 bg-gray-50 dark:bg-gray-800"
-      >
-        <div class="font-semibold mb-2">Total combinado (todos CPFs)</div>
-        <div class="text-sm mb-2 space-y-1">
-          <div class="flex justify-between">
-            <span class="text-gray-500">Transferível:</span>
-            <span>{{ fmtMiles(totals.totalMiles) }}</span>
-          </div>
-          <div v-if="totals.leftover > 0" class="flex justify-between text-xs text-amber-600">
-            <span>Sobra:</span>
-            <span>{{ fmtMiles(totals.leftover) }}</span>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-gray-500">Custo total:</span>
-            <span>R$ {{ fmtMoney(totals.cost) }}</span>
-          </div>
-        </div>
-        <table class="w-full text-xs">
-          <thead class="text-gray-500">
-            <tr>
-              <th class="text-left py-1">Cia</th>
-              <th class="text-right py-1">Vendável</th>
-              <th class="text-right py-1" title="Custo Médio Milheiro">C.M.M.</th>
-              <th class="text-right py-1">Venda R$</th>
-              <th class="text-right py-1">Lucro R$</th>
-              <th class="text-right py-1">Marg.</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="row in totals.byAirline"
-              :key="row.airline"
-              :class="[
-                'border-t border-gray-200 dark:border-gray-700',
-                row.best && 'bg-green-100 dark:bg-green-900/30 font-semibold',
-              ]"
-            >
-              <td class="py-1">{{ row.airline }}</td>
-              <td class="text-right">{{ fmtMiles(row.sellable) }}</td>
-              <td class="text-right">{{ fmtMoney(row.combinedAvg) }}</td>
-              <td class="text-right">{{ fmtMoney(row.saleValue) }}</td>
-              <td
-                class="text-right"
-                :class="row.profit >= 0 ? 'text-green-600' : 'text-red-600'"
-              >
-                {{ fmtMoney(row.profit) }}
-              </td>
-              <td
-                class="text-right"
-                :class="row.profit >= 0 ? 'text-green-600' : 'text-red-600'"
-              >
-                {{ row.margin.toFixed(0) }}%
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
     </div>
   </UCard>
 </template>
@@ -494,24 +435,6 @@ const results = computed(() => {
       byAirline,
     };
   }).filter((r) => r !== null);
-});
-
-const totals = computed(() => {
-  const totalMiles = results.value.reduce((s, r) => s + r.totalMiles, 0);
-  const cost = results.value.reduce((s, r) => s + r.cost, 0);
-  const floorLeftover = results.value.reduce((s, r) => s + (r.floorLeftover || 0), 0);
-  const avgPrice = totalMiles > 0 ? (cost / totalMiles) * 1000 : 0;
-  // Agrega saldo cia entre CPFs
-  const aggExisting = {};
-  for (const r of results.value) {
-    for (const [name, info] of Object.entries(r.airlineExisting ?? {})) {
-      if (!aggExisting[name]) aggExisting[name] = { miles: 0, cost: 0 };
-      aggExisting[name].miles += info.miles;
-      aggExisting[name].cost += info.cost;
-    }
-  }
-  const byAirline = computeByAirline(totalMiles, cost, aggExisting);
-  return { totalMiles, avgPrice, cost, leftover: floorLeftover, byAirline };
 });
 
 function fmtMiles(n) {
