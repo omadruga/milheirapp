@@ -216,9 +216,7 @@ const columns = [
     key: "actions",
   },
 ];
-const { pending, data: companies } = await useLazyAsyncData("companies", () => {
-  return $fetch("/api/companies");
-});
+const { pending, data: companies } = await useFetch("/api/companies", { key: "companies", lazy: true });
 const filteredCompanies = computed(() => {
   if (!filter.value) {
     return companies.value;

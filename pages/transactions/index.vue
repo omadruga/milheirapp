@@ -248,6 +248,7 @@ function canExpire(type: string): boolean {
   return true;
 }
 
+const headers = useRequestHeaders(["cookie"]);
 const { pending, data: transactions } = await useLazyAsyncData(
   "transactions",
   () => {
@@ -262,7 +263,7 @@ const { pending, data: transactions } = await useLazyAsyncData(
       selectedAccountFilter.value.id = route.query.accountId;
       selectedAccountFilter.value.label = route.query.accountLabel;
     }
-    return $fetch("/api/transactions", { params: query });
+    return $fetch("/api/transactions", { params: query, headers });
   }
 );
 const filteredTransactions = computed(() => {

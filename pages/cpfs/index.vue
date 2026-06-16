@@ -91,9 +91,7 @@ const columns = [
     key: "actions",
   },
 ];
-const { pending, data: cpfs } = await useLazyAsyncData("cpfs", () => {
-  return $fetch("/api/cpfs");
-});
+const { pending, data: cpfs } = await useFetch("/api/cpfs", { key: "cpfs", lazy: true });
 const filteredCpfs = computed(() => {
   if (!filter.value) {
     return cpfs.value;

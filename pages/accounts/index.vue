@@ -129,9 +129,7 @@ const columns = [
     key: "actions",
   },
 ];
-const { pending, data: accounts } = await useLazyAsyncData("accounts", () => {
-  return $fetch("/api/accounts");
-});
+const { pending, data: accounts } = await useFetch("/api/accounts", { key: "accounts", lazy: true });
 const filteredAccounts = computed(() => {
   if (!filter.value) {
     return accounts.value;

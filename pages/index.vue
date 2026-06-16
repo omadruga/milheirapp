@@ -142,9 +142,7 @@
 </template>
 <script setup>
 const { loggedIn, user, session, clear } = useUserSession();
-const { pending, data: cpfs } = await useLazyAsyncData("cpfs", () => {
-  return $fetch("/api/");
-});
+const { pending, data: cpfs } = await useFetch("/api/", { key: "cpfs", lazy: true });
 const formCpf = ref();
 const formAccount = ref();
 const formTransaction = ref();
