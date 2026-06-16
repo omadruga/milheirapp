@@ -142,6 +142,10 @@
               <span class="text-gray-500">Custo total:</span>
               <span>R$ {{ fmtMoney(r.cost) }}</span>
             </div>
+            <div v-if="fmtAirlineExisting(r.airlineExisting)" class="flex justify-between text-xs text-gray-400 border-t border-gray-100 dark:border-gray-800 pt-1 mt-1">
+              <span>Já na cia (soma no pool):</span>
+              <span>{{ fmtAirlineExisting(r.airlineExisting) }}</span>
+            </div>
           </div>
           <table class="w-full text-xs">
             <thead class="text-gray-500">
@@ -343,22 +347,57 @@ watch(
   { deep: true }
 );
 
-function computeByAirline(totalMiles, totalCost) {
+// totalMiles: milhas transferidas (programa)
+// totalCost: custo das milhas transferidas
+// airlineExisting: { [airlineName]: { miles, cost } } — saldo prévio na cia
+function computeByAirline(totalMiles, totalCost, airlineExisting = {}) {
   const rows = airlines.value.map((a) => {
     const inp = inputs[a.value] ?? { bonus: 0, sale: 0 };
-    const milesAfterBonus = totalMiles * (1 + (inp.bonus || 0) / 100);
-    // Venda também em múltiplos de 1.000
-    const sellable = Math.floor(milesAfterBonus / 1000) * 1000;
+    const received = totalMiles * (1 + (inp.bonus || 0) / 100);
+    const existing = airlineExisting[a.value] ?? { miles: 0, cost: 0 };
+    const combinedMiles = received + existing.miles;
+    const combinedCost = totalCost + existing.cost;
+    const combinedAvg =
+      combinedMiles > 0 ? (combinedCost / combinedMiles) * 1000 : 0;
+    // Venda em múltiplo de 1.000
+    const sellable = Math.floor(combinedMiles / 1000) * 1000;
+    const costOfSellable =
+      combinedMiles > 0 ? (sellable / combinedMiles) * combinedCost : 0;
     const saleValue = (sellable * (inp.sale || 0)) / 1000;
-    const profit = saleValue - totalCost;
+    const profit = saleValue - costOfSellable;
     const margin = saleValue > 0 ? (profit / saleValue) * 100 : 0;
-    return { airline: a.label, sellable, saleValue, profit, margin };
+    return {
+      airline: a.label,
+      received,
+      existingMiles: existing.miles,
+      combinedMiles,
+      combinedAvg,
+      sellable,
+      costOfSellable,
+      saleValue,
+      profit,
+      margin,
+    };
   });
   const maxProfit = Math.max(...rows.map((r) => r.profit), 0);
   if (maxProfit > 0) {
     for (const r of rows) r.best = r.profit === maxProfit;
   }
   return rows;
+}
+
+// Extrai saldo + custo das contas AIRLINE de um CPF, em {nome: {miles, cost}}
+function airlineExistingOf(cpf) {
+  const out = {};
+  for (const acc of cpf?.accounts ?? []) {
+    if (acc.company?.type === "AIRLINE") {
+      out[acc.company.name] = {
+        miles: acc.miles ?? 0,
+        cost: ((acc.miles ?? 0) * (acc.averageMilePrice ?? 0)) / 1000,
+      };
+    }
+  }
+  return out;
 }
 
 // Transferências só ocorrem em múltiplos de 1.000.
@@ -386,6 +425,8 @@ const results = computed(() => {
     const avgPriceExisting =
       existingMiles > 0 ? (existingCost / existingMiles) * 1000 : 0;
 
+    const airlineExisting = airlineExistingOf(cpf);
+
     if (isCarrinho.value) {
       // Carrinho só para o CPF selecionado
       if (cpf.id !== selectedCpf.value?.value) return null;
@@ -403,7 +444,7 @@ const results = computed(() => {
       const totalMiles = total;
       const avgPrice = totalMiles > 0 ? (totalCost / totalMiles) * 1000 : 0;
       const boughtPricekLocal = bought > 0 ? (cost / bought) * 1000 : 0;
-      const byAirline = computeByAirline(totalMiles, totalCost);
+      const byAirline = computeByAirline(totalMiles, totalCost, airlineExisting);
       return {
         cpf,
         existingMiles,
@@ -420,6 +461,7 @@ const results = computed(() => {
         totalMiles,
         avgPrice,
         cost: totalCost,
+        airlineExisting,
         byAirline,
       };
     }
@@ -435,7 +477,7 @@ const results = computed(() => {
       totalCost += (fl * ap) / 1000;
     }
     const avgPrice = totalMiles > 0 ? (totalCost / totalMiles) * 1000 : 0;
-    const byAirline = computeByAirline(totalMiles, totalCost);
+    const byAirline = computeByAirline(totalMiles, totalCost, airlineExisting);
     return {
       cpf,
       existingMiles,
@@ -444,6 +486,7 @@ const results = computed(() => {
       totalMiles,
       avgPrice,
       cost: totalCost,
+      airlineExisting,
       byAirline,
     };
   }).filter((r) => r !== null);
@@ -454,7 +497,16 @@ const totals = computed(() => {
   const cost = results.value.reduce((s, r) => s + r.cost, 0);
   const floorLeftover = results.value.reduce((s, r) => s + (r.floorLeftover || 0), 0);
   const avgPrice = totalMiles > 0 ? (cost / totalMiles) * 1000 : 0;
-  const byAirline = computeByAirline(totalMiles, cost);
+  // Agrega saldo cia entre CPFs
+  const aggExisting = {};
+  for (const r of results.value) {
+    for (const [name, info] of Object.entries(r.airlineExisting ?? {})) {
+      if (!aggExisting[name]) aggExisting[name] = { miles: 0, cost: 0 };
+      aggExisting[name].miles += info.miles;
+      aggExisting[name].cost += info.cost;
+    }
+  }
+  const byAirline = computeByAirline(totalMiles, cost, aggExisting);
   return { totalMiles, avgPrice, cost, leftover: floorLeftover, byAirline };
 });
 
@@ -466,5 +518,17 @@ function fmtMoney(n) {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
+}
+function fmtAirlineExisting(airlineExisting) {
+  if (!airlineExisting) return "";
+  const parts = [];
+  for (const a of airlines.value) {
+    const info = airlineExisting[a.value];
+    if (info && info.miles > 0) {
+      const avg = info.miles > 0 ? (info.cost / info.miles) * 1000 : 0;
+      parts.push(`${a.label} ${fmtMiles(info.miles)} (R$ ${fmtMoney(avg)}/k)`);
+    }
+  }
+  return parts.join(" • ");
 }
 </script>
