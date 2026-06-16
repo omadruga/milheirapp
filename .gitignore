@@ -9,6 +9,10 @@ dist
 # Node dependencies
 node_modules
 
+# Conflicting lockfiles (this project uses pnpm)
+package-lock.json
+yarn.lock
+
 # Logs
 logs
 *.log
