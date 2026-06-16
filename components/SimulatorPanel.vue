@@ -152,8 +152,9 @@
               <tr>
                 <th class="text-left py-1">Cia</th>
                 <th class="text-right py-1">Vendável</th>
-                <th class="text-right py-1">Venda</th>
-                <th class="text-right py-1">Lucro</th>
+                <th class="text-right py-1" title="Custo Médio Milheiro">CMM</th>
+                <th class="text-right py-1">Venda R$</th>
+                <th class="text-right py-1">Lucro R$</th>
                 <th class="text-right py-1">Marg.</th>
               </tr>
             </thead>
@@ -168,12 +169,13 @@
               >
                 <td class="py-1">{{ row.airline }}</td>
                 <td class="text-right">{{ fmtMiles(row.sellable) }}</td>
-                <td class="text-right">R$ {{ fmtMoney(row.saleValue) }}</td>
+                <td class="text-right">{{ fmtMoney(row.combinedAvg) }}</td>
+                <td class="text-right">{{ fmtMoney(row.saleValue) }}</td>
                 <td
                   class="text-right"
                   :class="row.profit >= 0 ? 'text-green-600' : 'text-red-600'"
                 >
-                  R$ {{ fmtMoney(row.profit) }}
+                  {{ fmtMoney(row.profit) }}
                 </td>
                 <td
                   class="text-right"
@@ -210,9 +212,10 @@
           <thead class="text-gray-500">
             <tr>
               <th class="text-left py-1">Cia</th>
-              <th class="text-right py-1">Após bonus</th>
-              <th class="text-right py-1">Venda</th>
-              <th class="text-right py-1">Lucro</th>
+              <th class="text-right py-1">Vendável</th>
+              <th class="text-right py-1" title="Custo Médio Milheiro">C.M.M.</th>
+              <th class="text-right py-1">Venda R$</th>
+              <th class="text-right py-1">Lucro R$</th>
               <th class="text-right py-1">Marg.</th>
             </tr>
           </thead>
@@ -226,13 +229,14 @@
               ]"
             >
               <td class="py-1">{{ row.airline }}</td>
-              <td class="text-right">{{ fmtMiles(row.milesAfterBonus) }}</td>
-              <td class="text-right">R$ {{ fmtMoney(row.saleValue) }}</td>
+              <td class="text-right">{{ fmtMiles(row.sellable) }}</td>
+              <td class="text-right">{{ fmtMoney(row.combinedAvg) }}</td>
+              <td class="text-right">{{ fmtMoney(row.saleValue) }}</td>
               <td
                 class="text-right"
                 :class="row.profit >= 0 ? 'text-green-600' : 'text-red-600'"
               >
-                R$ {{ fmtMoney(row.profit) }}
+                {{ fmtMoney(row.profit) }}
               </td>
               <td
                 class="text-right"
