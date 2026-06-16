@@ -260,12 +260,41 @@ const airlines = computed(() => {
   return Array.from(seen.values());
 });
 
+const STORAGE_KEY = "simulator-airline-inputs-v1";
 const inputs = reactive({});
+
+// Carrega valores salvos antes do watchEffect inicializar com zeros.
+// onMounted só roda no client, então localStorage está disponível.
+onMounted(() => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const saved = JSON.parse(raw);
+    for (const [k, v] of Object.entries(saved || {})) {
+      inputs[k] = {
+        bonus: typeof v?.bonus === "number" ? v.bonus : 0,
+        sale: typeof v?.sale === "number" ? v.sale : 0,
+      };
+    }
+  } catch {}
+});
+
 watchEffect(() => {
   for (const a of airlines.value) {
     if (!inputs[a.value]) inputs[a.value] = { bonus: 0, sale: 0 };
   }
 });
+
+watch(
+  inputs,
+  (val) => {
+    if (!import.meta.client) return;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(val));
+    } catch {}
+  },
+  { deep: true }
+);
 
 function computeByAirline(totalMiles, totalCost) {
   const rows = airlines.value.map((a) => {
