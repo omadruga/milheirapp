@@ -17,16 +17,32 @@
 
     <div v-if="isCarrinho" class="mb-4 border border-gray-200 dark:border-gray-700 rounded p-3">
       <div class="text-sm font-medium mb-2">Compra no carrinho</div>
-      <div class="flex gap-2 mb-2">
-        <UFormGroup label="Meta (milhas)" class="flex-1">
-          <UInput v-model.number="buy.target" type="number" min="0" step="1000" />
-        </UFormGroup>
-        <UFormGroup label="Preço (R$/1000)" class="flex-1">
-          <UInput v-model.number="buy.pricek" type="number" min="0" step="0.01" />
-        </UFormGroup>
+      <UFormGroup label="CPF" class="mb-2">
+        <USelectMenu v-model="selectedCpf" :options="cpfOptions">
+          <template #label>{{ selectedCpf?.label ?? "—" }}</template>
+        </USelectMenu>
+      </UFormGroup>
+      <UFormGroup label="Total de milhas (enviadas + compradas)" class="mb-2">
+        <UInput v-model.number="buy.total" type="number" min="0" step="1000" />
+      </UFormGroup>
+      <UFormGroup label="Enviadas (do existente)" class="mb-2">
+        <UInput v-model.number="buy.sent" type="number" min="0" step="1000" />
+        <template #help>
+          Disponível neste CPF: {{ fmtMiles(selectedCpfAvailable) }}
+        </template>
+      </UFormGroup>
+      <UFormGroup label="Custo total da compra (R$)" class="mb-2">
+        <UInput v-model.number="buy.cost" type="number" min="0" step="0.01" />
+      </UFormGroup>
+      <div v-if="boughtMiles > 0" class="text-xs text-gray-500">
+        Compradas: <span class="font-semibold">{{ fmtMiles(boughtMiles) }}</span>
+        • Preço/milheiro: <span class="font-semibold">R$ {{ fmtMoney(boughtPricek) }}</span>
       </div>
-      <div class="text-xs text-gray-400">
-        O preço por milheiro varia com a meta — consulte o Livelo p/ o volume escolhido. Pagamento em 12x sem juros (PIX desconsiderado).
+      <div v-if="buy.sent > selectedCpfAvailable" class="text-xs text-red-600 mt-1">
+        ⚠️ Enviadas ({{ fmtMiles(buy.sent) }}) excede disponível ({{ fmtMiles(selectedCpfAvailable) }})
+      </div>
+      <div class="text-xs text-gray-400 mt-2">
+        12x sem juros (PIX desconsiderado).
       </div>
     </div>
 
@@ -96,19 +112,16 @@
             </div>
             <template v-if="isCarrinho">
               <div class="flex justify-between mt-1">
-                <span class="text-gray-500">Meta:</span>
+                <span class="text-gray-500">Total simulado:</span>
                 <span>{{ fmtMiles(r.target) }}</span>
               </div>
               <div class="flex justify-between">
-                <span class="text-gray-500">→ Usar existente:</span>
+                <span class="text-gray-500">→ Enviadas (existente):</span>
                 <span>{{ fmtMiles(r.useExisting) }} (R$ {{ fmtMoney(r.useExistingCost) }})</span>
               </div>
               <div v-if="r.buyMiles > 0" class="flex justify-between">
-                <span class="text-gray-500">→ Comprar:</span>
-                <span>{{ fmtMiles(r.buyMiles) }} (R$ {{ fmtMoney(r.buyCost) }})</span>
-              </div>
-              <div v-else-if="r.target > 0 && r.target < r.availableFloored" class="flex justify-between text-xs text-gray-400">
-                <span>(meta menor que disponível — carrinho não usado)</span>
+                <span class="text-gray-500">→ Compradas:</span>
+                <span>{{ fmtMiles(r.buyMiles) }} a R$ {{ fmtMoney(r.buyPricek) }}/1000 (R$ {{ fmtMoney(r.buyCost) }})</span>
               </div>
             </template>
             <div class="flex justify-between font-semibold border-t border-gray-200 dark:border-gray-700 pt-1 mt-1">
@@ -165,7 +178,7 @@
       </div>
 
       <div
-        v-if="totals.totalMiles > 0"
+        v-if="!isCarrinho && totals.totalMiles > 0"
         class="border-2 border-gray-300 dark:border-gray-600 rounded p-3 bg-gray-50 dark:bg-gray-800"
       >
         <div class="font-semibold mb-2">Total combinado (todos CPFs)</div>
@@ -237,7 +250,36 @@ const paths = [
 const path = ref(paths[0]);
 const isCarrinho = computed(() => path.value.value === "CARRINHO");
 
-const buy = reactive({ target: 0, pricek: 0 });
+const buy = reactive({ total: 0, sent: 0, cost: 0 });
+
+const cpfOptions = computed(() =>
+  (props.cpfs ?? []).map((c) => ({ label: c.name, value: c.id }))
+);
+const selectedCpf = ref(null);
+watchEffect(() => {
+  if (!selectedCpf.value && cpfOptions.value.length) {
+    selectedCpf.value = cpfOptions.value[0];
+  }
+});
+
+const selectedCpfAvailable = computed(() => {
+  const c = (props.cpfs ?? []).find((c) => c.id === selectedCpf.value?.value);
+  if (!c) return 0;
+  let total = 0;
+  for (const acc of c.accounts ?? []) {
+    if (acc.company?.type === "PROGRAM") {
+      total += Math.floor((acc.miles ?? 0) / 1000) * 1000;
+    }
+  }
+  return total;
+});
+
+const boughtMiles = computed(() =>
+  Math.max((buy.total || 0) - (buy.sent || 0), 0)
+);
+const boughtPricek = computed(() =>
+  boughtMiles.value > 0 ? ((buy.cost || 0) / boughtMiles.value) * 1000 : 0
+);
 
 const EXCLUDED_AIRLINES = new Set(["Azul", "TAP"]);
 const airlines = computed(() => {
@@ -315,8 +357,8 @@ function computeByAirline(totalMiles, totalCost) {
 }
 
 // Transferências só ocorrem em múltiplos de 1.000.
-// SIMPLE: usa tudo disponível (após floor por programa).
-// CARRINHO: meta arbitrária; usa o máximo do existente disponível, compra o resto a R$/1000.
+// SIMPLE: usa tudo disponível (após floor por programa). Mostra todos os CPFs.
+// CARRINHO: usuário informa total + enviadas + custo da compra. Aplica a UM CPF.
 const results = computed(() => {
   return (props.cpfs ?? []).map((cpf) => {
     const programs = (cpf.accounts ?? []).filter(
@@ -340,25 +382,30 @@ const results = computed(() => {
       existingMiles > 0 ? (existingCost / existingMiles) * 1000 : 0;
 
     if (isCarrinho.value) {
-      const target = Math.floor((buy.target || 0) / 1000) * 1000;
-      const useExisting = Math.min(availableFloored, target);
-      const buyMiles = Math.max(target - useExisting, 0);
-      const buyCost = (buyMiles * (buy.pricek || 0)) / 1000;
-      const useExistingCost = (useExisting * avgPriceExisting) / 1000;
-      const totalCost = useExistingCost + buyCost;
-      const totalMiles = target;
+      // Carrinho só para o CPF selecionado
+      if (cpf.id !== selectedCpf.value?.value) return null;
+
+      const total = Math.floor((buy.total || 0) / 1000) * 1000;
+      const sent = Math.floor((buy.sent || 0) / 1000) * 1000;
+      const cost = buy.cost || 0;
+      const bought = Math.max(total - sent, 0);
+      const sentCost = (sent * avgPriceExisting) / 1000;
+      const totalCost = sentCost + cost;
+      const totalMiles = total;
       const avgPrice = totalMiles > 0 ? (totalCost / totalMiles) * 1000 : 0;
+      const boughtPricekLocal = bought > 0 ? (cost / bought) * 1000 : 0;
       const byAirline = computeByAirline(totalMiles, totalCost);
       return {
         cpf,
         existingMiles,
         availableFloored,
         floorLeftover,
-        target,
-        useExisting,
-        useExistingCost,
-        buyMiles,
-        buyCost,
+        target: total,
+        useExisting: sent,
+        useExistingCost: sentCost,
+        buyMiles: bought,
+        buyCost: cost,
+        buyPricek: boughtPricekLocal,
         totalMiles,
         avgPrice,
         cost: totalCost,
@@ -388,7 +435,7 @@ const results = computed(() => {
       cost: totalCost,
       byAirline,
     };
-  });
+  }).filter((r) => r !== null);
 });
 
 const totals = computed(() => {
