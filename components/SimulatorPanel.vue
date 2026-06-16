@@ -98,30 +98,36 @@
         </div>
         <template v-else>
           <div class="text-sm mb-2 space-y-1">
-            <div class="flex justify-between">
-              <span class="text-gray-500">Milhas programa:</span>
-              <span>{{ fmtMiles(r.existingMiles) }}</span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-gray-500">Disponível (múltiplos de 1.000):</span>
-              <span>{{ fmtMiles(r.availableFloored) }}</span>
-            </div>
-            <div v-if="r.floorLeftover > 0" class="flex justify-between text-xs text-amber-600">
-              <span>Sobra fixa (floor):</span>
-              <span>{{ fmtMiles(r.floorLeftover) }}</span>
-            </div>
             <template v-if="isCarrinho">
+              <div class="flex justify-between">
+                <span class="text-gray-500">Livelo:</span>
+                <span>{{ fmtMiles(r.liveloMiles) }} a R$ {{ fmtMoney(r.liveloAvgPrice) }}/1000</span>
+              </div>
               <div class="flex justify-between mt-1">
                 <span class="text-gray-500">Total simulado:</span>
                 <span>{{ fmtMiles(r.target) }}</span>
               </div>
               <div class="flex justify-between">
-                <span class="text-gray-500">→ Enviadas (existente):</span>
+                <span class="text-gray-500">→ Enviadas (Livelo):</span>
                 <span>{{ fmtMiles(r.useExisting) }} (R$ {{ fmtMoney(r.useExistingCost) }})</span>
               </div>
               <div v-if="r.buyMiles > 0" class="flex justify-between">
                 <span class="text-gray-500">→ Compradas:</span>
                 <span>{{ fmtMiles(r.buyMiles) }} a R$ {{ fmtMoney(r.buyPricek) }}/1000 (R$ {{ fmtMoney(r.buyCost) }})</span>
+              </div>
+            </template>
+            <template v-else>
+              <div class="flex justify-between">
+                <span class="text-gray-500">Milhas programa:</span>
+                <span>{{ fmtMiles(r.existingMiles) }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-500">Disponível (múltiplos de 1.000):</span>
+                <span>{{ fmtMiles(r.availableFloored) }}</span>
+              </div>
+              <div v-if="r.floorLeftover > 0" class="flex justify-between text-xs text-amber-600">
+                <span>Sobra fixa (floor):</span>
+                <span>{{ fmtMiles(r.floorLeftover) }}</span>
               </div>
             </template>
             <div class="flex justify-between font-semibold border-t border-gray-200 dark:border-gray-700 pt-1 mt-1">
@@ -262,17 +268,16 @@ watchEffect(() => {
   }
 });
 
-const selectedCpfAvailable = computed(() => {
+// No carrinho, "enviadas" sai do saldo Livelo do CPF (e não precisa ser múltiplo de 1000)
+const selectedCpfLivelo = computed(() => {
   const c = (props.cpfs ?? []).find((c) => c.id === selectedCpf.value?.value);
-  if (!c) return 0;
-  let total = 0;
-  for (const acc of c.accounts ?? []) {
-    if (acc.company?.type === "PROGRAM") {
-      total += Math.floor((acc.miles ?? 0) / 1000) * 1000;
-    }
-  }
-  return total;
+  if (!c) return null;
+  return (c.accounts ?? []).find((a) => a.company?.name === "Livelo") ?? null;
 });
+const selectedCpfAvailable = computed(() => selectedCpfLivelo.value?.miles ?? 0);
+const selectedCpfLiveloAvgPrice = computed(
+  () => selectedCpfLivelo.value?.averageMilePrice ?? 0
+);
 
 const boughtMiles = computed(() =>
   Math.max((buy.total || 0) - (buy.sent || 0), 0)
@@ -385,11 +390,15 @@ const results = computed(() => {
       // Carrinho só para o CPF selecionado
       if (cpf.id !== selectedCpf.value?.value) return null;
 
+      const liveloMiles = selectedCpfLivelo.value?.miles ?? 0;
+      const liveloAvgPrice = selectedCpfLivelo.value?.averageMilePrice ?? 0;
+
       const total = Math.floor((buy.total || 0) / 1000) * 1000;
-      const sent = Math.floor((buy.sent || 0) / 1000) * 1000;
+      // sent pode ser não-múltiplo de 1000 (excepcional do carrinho Livelo)
+      const sent = Math.max(buy.sent || 0, 0);
       const cost = buy.cost || 0;
       const bought = Math.max(total - sent, 0);
-      const sentCost = (sent * avgPriceExisting) / 1000;
+      const sentCost = (sent * liveloAvgPrice) / 1000;
       const totalCost = sentCost + cost;
       const totalMiles = total;
       const avgPrice = totalMiles > 0 ? (totalCost / totalMiles) * 1000 : 0;
@@ -400,6 +409,8 @@ const results = computed(() => {
         existingMiles,
         availableFloored,
         floorLeftover,
+        liveloMiles,
+        liveloAvgPrice,
         target: total,
         useExisting: sent,
         useExistingCost: sentCost,
