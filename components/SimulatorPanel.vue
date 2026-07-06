@@ -56,7 +56,7 @@
         >
           <UAvatar v-if="a.icon" :src="a.icon" size="2xs" />
           <span class="w-12 text-sm">{{ a.label }}</span>
-          <div class="flex-1">
+          <div v-if="!isDireta" class="flex-1">
             <UInput
               v-model.number="inputs[a.value].bonus"
               type="number"
@@ -93,11 +93,11 @@
         class="border border-gray-200 dark:border-gray-700 rounded p-3"
       >
         <div class="font-semibold mb-2">{{ r.cpf.name }}</div>
-        <div v-if="r.totalMiles === 0" class="text-sm text-gray-500">
-          {{ isCarrinho ? "Defina uma meta de transferência." : "Sem milhas em programa." }}
+        <div v-if="r.emptyMessage" class="text-sm text-gray-500">
+          {{ r.emptyMessage }}
         </div>
         <template v-else>
-          <div class="text-sm mb-2 space-y-1">
+          <div v-if="!isDireta" class="text-sm mb-2 space-y-1">
             <template v-if="isCarrinho">
               <div class="flex justify-between">
                 <span class="text-gray-500">Livelo:</span>
@@ -199,11 +199,13 @@ const props = defineProps({
 });
 
 const paths = [
+  { label: "Venda direta na cia aérea", value: "DIRETA" },
   { label: "Transferência bonificada simples", value: "SIMPLE" },
   { label: "Transferência compra carrinho", value: "CARRINHO" },
 ];
 const path = ref(paths[0]);
 const isCarrinho = computed(() => path.value.value === "CARRINHO");
+const isDireta = computed(() => path.value.value === "DIRETA");
 
 const buy = reactive({ total: 0, sent: 0, cost: 0 });
 
@@ -372,6 +374,25 @@ const results = computed(() => {
 
     const airlineExisting = airlineExistingOf(cpf);
 
+    if (isDireta.value) {
+      const hasAirlineBalance = Object.values(airlineExisting).some(
+        (v) => v.miles > 0
+      );
+      const byAirline = computeByAirline(0, 0, airlineExisting);
+      return {
+        cpf,
+        existingMiles,
+        availableFloored,
+        floorLeftover,
+        totalMiles: 0,
+        avgPrice: 0,
+        cost: 0,
+        airlineExisting,
+        byAirline,
+        emptyMessage: hasAirlineBalance ? null : "Sem milhas em cias aéreas.",
+      };
+    }
+
     if (isCarrinho.value) {
       // Carrinho só para o CPF selecionado
       if (cpf.id !== selectedCpf.value?.value) return null;
@@ -408,6 +429,7 @@ const results = computed(() => {
         cost: totalCost,
         airlineExisting,
         byAirline,
+        emptyMessage: totalMiles === 0 ? "Defina uma meta de transferência." : null,
       };
     }
 
@@ -433,6 +455,7 @@ const results = computed(() => {
       cost: totalCost,
       airlineExisting,
       byAirline,
+      emptyMessage: totalMiles === 0 ? "Sem milhas em programa." : null,
     };
   }).filter((r) => r !== null);
 });
