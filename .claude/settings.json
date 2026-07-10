@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Select-String -Pattern \"env\")",
+      "Bash(node --env-file=.env scripts/inspect-latam-seats.js)",
+      "Bash(awk -F@ '{gsub\\(/:[^:]*$/,\":<pw>\",$1\\); print $1\"@\"$2}')",
+      "Bash(tasklist)",
+      "Bash(DATABASE_URL=\"postgres://default:nTCioZfamY34@ep-divine-wave-92538226-pooler.us-east-1.postgres.vercel-storage.com/verceldb?pgbouncer=true&connect_timeout=15\" node scripts/inspect-latam-seats.js)",
+      "Bash(DATABASE_URL=\"postgres://default:nTCioZfamY34@ep-divine-wave-92538226-pooler.us-east-1.postgres.vercel-storage.com/verceldb?pgbouncer=true&connect_timeout=15\" node scripts/inspect-latam-account-updates.js)",
+      "Bash(icacls \"d:\\\\Work\\\\Learning\\\\milheirapp-nuxt\\\\node_modules\\\\.pnpm\\\\dayjs-nuxt@2.1.9\\\\node_modules\\\\dayjs-nuxt\\\\dist\\\\runtime\\\\composables\")",
+      "Bash(powershell -c \"Get-Content 'd:\\\\Work\\\\Learning\\\\milheirapp-nuxt\\\\node_modules\\\\.pnpm\\\\dayjs-nuxt@2.1.9\\\\node_modules\\\\dayjs-nuxt\\\\dist\\\\runtime\\\\composables\\\\dayjs.mjs'\")",
+      "Bash(DATABASE_URL=\"postgres://default:nTCioZfamY34@ep-divine-wave-92538226-pooler.us-east-1.postgres.vercel-storage.com/verceldb?pgbouncer=true&connect_timeout=15\" node scripts/test-calculate-latam.js)",
+      "Bash(DATABASE_URL=\"postgres://default:nTCioZfamY34@ep-divine-wave-92538226-pooler.us-east-1.postgres.vercel-storage.com/verceldb?pgbouncer=true&connect_timeout=15\" node scripts/inspect-company-names.js)"
+    ]
+  }
+}

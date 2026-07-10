@@ -1,6 +1,5 @@
 import prisma from "./prisma";
 import { Prisma } from "@prisma/client";
-import { useDayjs } from "#dayjs";
 import {
   updateAccountMilePrice,
   updateAccountMilePriceSeats,
@@ -156,8 +155,6 @@ export async function deleteTransaction(id) {
 }
 
 async function calculate(accountId) {
-  const dayjs = useDayjs();
-
   const account = await prisma.Account.findUnique({
     where: { id: accountId },
     include: { company: { select: { type: true } } },
@@ -281,30 +278,33 @@ async function calculate(accountId) {
 
     // calculation of CPFs
     if (t.account.company.type == "AIRLINE") {
-      var start = null;
+      var startMs = null;
       switch (t.account.company.name) {
         case "Latam": {
           // 25 cpfs + próprio
           // cada cpf consome uma vaga por 365 dias; no dia 366 é liberada
           seats = 25;
-          start = dayjs().startOf("day").subtract(365, "day");
+          const s = new Date();
+          s.setHours(0, 0, 0, 0);
+          s.setDate(s.getDate() - 365);
+          startMs = s.getTime();
           break;
         }
         case "Gol": {
           // 25 cpfs + próprio
           // ano calendário, janeiro zera
           seats = 25;
-          start = dayjs().startOf("year");
+          const s = new Date();
+          s.setMonth(0, 1);
+          s.setHours(0, 0, 0, 0);
+          startMs = s.getTime();
           break;
         }
       }
-      if (start && t.type == "FLIGHT") {
-        const tDay = dayjs(t.date).startOf("day");
-        const inWindow = tDay.isAfter(start);
-        console.log(
-          `[calc seats acc=${accountId}] tx#${t.id} type=${t.type} date=${t.date?.toISOString?.() ?? t.date} tDay=${tDay.format?.() ?? tDay} start=${start.format?.() ?? start} inWindow=${inWindow} cpfs=${t.cpfs} running=${seatsUsed}`
-        );
-        if (inWindow) {
+      if (startMs != null && t.type == "FLIGHT") {
+        const tDay = new Date(t.date);
+        tDay.setHours(0, 0, 0, 0);
+        if (tDay.getTime() > startMs) {
           if (t.cpfs && t.cpfs > 0) {
             seatsUsed += t.cpfs;
           }
@@ -318,7 +318,7 @@ async function calculate(accountId) {
     } else {
       if (t.expire) {
         if (expire) {
-          if (dayjs(t.expire).isBefore(expire)) {
+          if (new Date(t.expire).getTime() < new Date(expire).getTime()) {
             expire = t.expire;
           }
         } else {
@@ -331,9 +331,12 @@ async function calculate(accountId) {
   if (miles == 0) {
     averagePrice = 0;
   }
-  console.log(
-    `[calc DONE acc=${accountId}] companyType=${companyType} miles=${miles} avg=${averagePrice} seats=${seats} seatsUsed=${seatsUsed} dayjsNow=${dayjs().format?.() ?? "no-format"}`
-  );
+  console.log("[calc DONE]", {
+    accountId,
+    companyType,
+    seats,
+    seatsUsed,
+  });
   if (companyType == "PROGRAM") {
     await updateAccountMilePrice(accountId, miles, averagePrice);
   } else if (companyType == "AIRLINE") {
