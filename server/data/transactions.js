@@ -298,8 +298,13 @@ async function calculate(accountId) {
           break;
         }
       }
-      if (start) {
-        if (dayjs(t.date).startOf("day").isAfter(start)) {
+      if (start && t.type == "FLIGHT") {
+        const tDay = dayjs(t.date).startOf("day");
+        const inWindow = tDay.isAfter(start);
+        console.log(
+          `[calc seats acc=${accountId}] tx#${t.id} type=${t.type} date=${t.date?.toISOString?.() ?? t.date} tDay=${tDay.format?.() ?? tDay} start=${start.format?.() ?? start} inWindow=${inWindow} cpfs=${t.cpfs} running=${seatsUsed}`
+        );
+        if (inWindow) {
           if (t.cpfs && t.cpfs > 0) {
             seatsUsed += t.cpfs;
           }
@@ -326,6 +331,9 @@ async function calculate(accountId) {
   if (miles == 0) {
     averagePrice = 0;
   }
+  console.log(
+    `[calc DONE acc=${accountId}] companyType=${companyType} miles=${miles} avg=${averagePrice} seats=${seats} seatsUsed=${seatsUsed} dayjsNow=${dayjs().format?.() ?? "no-format"}`
+  );
   if (companyType == "PROGRAM") {
     await updateAccountMilePrice(accountId, miles, averagePrice);
   } else if (companyType == "AIRLINE") {
