@@ -284,10 +284,10 @@ async function calculate(accountId) {
       var start = null;
       switch (t.account.company.name) {
         case "Latam": {
-          // 24 cpfs + próprio
-          // cada cpf consome uma vaga por 366 dias
-          seats = 24;
-          start = dayjs().subtract(366, "day");
+          // 25 cpfs + próprio
+          // cada cpf consome uma vaga por 365 dias; no dia 366 é liberada
+          seats = 25;
+          start = dayjs().startOf("day").subtract(365, "day");
           break;
         }
         case "Gol": {
@@ -299,7 +299,7 @@ async function calculate(accountId) {
         }
       }
       if (start) {
-        if (dayjs(t.date).isAfter(start)) {
+        if (dayjs(t.date).startOf("day").isAfter(start)) {
           if (t.cpfs && t.cpfs > 0) {
             seatsUsed += t.cpfs;
           }
