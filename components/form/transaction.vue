@@ -121,6 +121,37 @@
           </UFormGroup>
         </div>
 
+        <div v-if="isSale">
+          <UFormGroup label="Programa de Venda" name="saleProgram" class="mb-4">
+            <USelectMenu
+              v-model="selectedSaleProgram"
+              :options="salePrograms"
+            >
+              <template #label>
+                {{ selectedSaleProgram?.label ?? "Selecione..." }}
+              </template>
+            </USelectMenu>
+          </UFormGroup>
+          <div class="flex">
+            <UFormGroup label="Previsto (R$)" name="previsto" class="mb-4 flex-1">
+              <UInput v-model="state.previsto" />
+            </UFormGroup>
+            <UFormGroup label="Recebido (R$)" name="received" class="mb-4 flex-1">
+              <UInput v-model="state.received" />
+            </UFormGroup>
+            <UFormGroup label="Status" name="saleStatus" class="mb-4 flex-1">
+              <USelectMenu
+                v-model="selectedSaleStatus"
+                :options="saleStatuses"
+              >
+                <template #label>
+                  {{ selectedSaleStatus?.label }}
+                </template>
+              </USelectMenu>
+            </UFormGroup>
+          </div>
+        </div>
+
         <UFormGroup label="Observação" name="description" class="mb-4">
           <UInput v-model="state.description" />
         </UFormGroup>
@@ -175,9 +206,29 @@ const types = [
     id: "EXPIRE",
     label: transactionTypeToString("EXPIRE"),
   },
+  {
+    id: "SALE",
+    label: transactionTypeToString("SALE"),
+  },
+];
+
+const saleStatuses = [
+  { id: "PAID", label: "Recebido" },
+  { id: "PENDING", label: "A receber" },
+  { id: "CANCELLED", label: "Cancelado" },
 ];
 
 const selectedType = ref();
+const selectedSaleProgram = ref({});
+const selectedSaleStatus = ref(saleStatuses[0]);
+const salePrograms = ref<any[]>([]);
+async function loadSalePrograms() {
+  if (salePrograms.value.length) return;
+  const companies = await $fetch("/api/companies");
+  salePrograms.value = (companies as any[])
+    .filter((c) => c.type === "SALE")
+    .map((c) => ({ id: c.id, label: c.name }));
+}
 const searchAccount = async (q: any) => {
   const accounts = await $fetch("/api/accounts", { params: { q } });
   return accounts
@@ -210,6 +261,8 @@ const state = ref({
   description: undefined,
   cpfs: undefined,
   milesBuy: undefined,
+  previsto: undefined,
+  received: undefined,
 });
 const validate = (state: any): FormError[] => {
   const errors: FormError[] = [];
@@ -223,6 +276,8 @@ const validate = (state: any): FormError[] => {
     errors.push({ path: "miles", message: "Informe a quantidade de Milhas" });
   if (showCost.value && !state.cost)
     errors.push({ path: "cost", message: "Informe o Custo" });
+  if (isSale.value && !selectedSaleProgram?.value?.id)
+    errors.push({ path: "saleProgram", message: "Selecione o Programa de Venda" });
   if (showMilesTo.value && !state.milesTo)
     errors.push({
       path: "milesTo",
@@ -261,6 +316,7 @@ const showAccountTo = computed(() => {
   );
 });
 const milesLabel = computed(() => {
+  if (selectedType.value?.id == "SALE") return "Milhas Vendidas";
   return selectedType.value?.id == "TRANSFER" ||
     selectedType.value?.id == "TRANSFER_BUY"
     ? "Milhas Origem"
@@ -287,6 +343,9 @@ const showCpfs = computed(() => {
 const showMilesBuy = computed(() => {
   return selectedType.value?.id == "TRANSFER_BUY";
 });
+const isSale = computed(() => {
+  return selectedType.value?.id == "SALE";
+});
 
 function add(accountId: number, accountLabel: string) {
   state.value.id = undefined;
@@ -306,6 +365,11 @@ function add(accountId: number, accountLabel: string) {
   state.value.description = undefined;
   state.value.cpfs = undefined;
   state.value.milesBuy = undefined;
+  state.value.previsto = undefined;
+  state.value.received = undefined;
+  selectedSaleProgram.value = {};
+  selectedSaleStatus.value = saleStatuses[0];
+  loadSalePrograms();
   isOpen.value = true;
 }
 
@@ -328,6 +392,14 @@ function edit(row: any) {
   state.value.description = row.description;
   state.value.cpfs = row.cpfs;
   state.value.milesBuy = row.milesBuy;
+  state.value.previsto = row.previsto;
+  state.value.received = row.received;
+  selectedSaleProgram.value = row.saleProgram
+    ? { id: row.saleProgram.id, label: row.saleProgram.name }
+    : {};
+  selectedSaleStatus.value =
+    saleStatuses.find((s) => s.id === row.saleStatus) ?? saleStatuses[0];
+  loadSalePrograms();
   isOpen.value = true;
 }
 
@@ -347,6 +419,10 @@ async function save(event: FormSubmitEvent<any>) {
       description: state.value.description,
       cpfs: state.value.cpfs,
       milesBuy: state.value.milesBuy,
+      saleProgram: selectedSaleProgram.value?.id,
+      previsto: state.value.previsto,
+      received: state.value.received,
+      saleStatus: selectedSaleStatus.value?.id,
     }),
   });
 

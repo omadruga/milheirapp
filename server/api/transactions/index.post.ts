@@ -19,6 +19,10 @@ export default defineEventHandler(async (event: any) => {
     cpfs,
     milesBuy,
     description,
+    saleProgram,
+    received,
+    previsto,
+    saleStatus,
   } = await readBody(event);
 
   var accTo = null;
@@ -82,6 +86,21 @@ export default defineEventHandler(async (event: any) => {
     data.cpfs = null;
     data.milesBuy = null;
     data.averagePriceTransfer = null;
+  } else if (type == "SALE") {
+    // venda de milhas: miles = milhas vendidas; não mexe no saldo (emissão via FLIGHT)
+    accTo = null;
+    data.milesTo = null;
+    data.cost = null;
+    data.expire = null;
+    data.averagePrice = null;
+    data.cpfs = null;
+    data.milesBuy = null;
+    data.averagePriceTransfer = null;
+    data.saleProgramId = saleProgram ? parseInt(saleProgram) : null;
+    data.received = received ? parseFloat(received) : 0.0;
+    data.previsto = previsto ? parseFloat(previsto) : 0.0;
+    data.saleStatus = saleStatus ?? "PAID";
+    data.costBasis = null; // calculado no calculate()
   }
 
   if (id) {

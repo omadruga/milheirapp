@@ -16,5 +16,7 @@ export default function (type: String) {
       return "Emissão de Passagem";
     case "EXPIRE":
       return "Milhas Expiradas";
+    case "SALE":
+      return "Venda de Milhas";
   }
 }

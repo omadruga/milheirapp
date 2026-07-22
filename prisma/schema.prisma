@@ -45,6 +45,7 @@ model Company {
   icon    String?
   type    AccountType
   Account Account[]
+  salesAsProgram Transaction[] @relation("SaleProgram")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -68,6 +69,14 @@ model Transaction {
   milesBuy Float?
   averagePriceTransfer Float?
 
+  // Venda de milhas (SALE)
+  saleProgram   Company?    @relation("SaleProgram", fields: [saleProgramId], references: [id])
+  saleProgramId Int?
+  received      Float?      // R$ efetivamente recebido (0 se pendente/cancelado)
+  previsto      Float?      // R$ previsto/negociado
+  costBasis     Float?      // snapshot do custo das milhas vendidas (calculado)
+  saleStatus    SaleStatus?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -77,7 +86,7 @@ enum AccountType {
   //CREDIT
   PROGRAM
   AIRLINE
-  //SALE
+  SALE
 }
 
 enum TransactionType {
@@ -88,4 +97,11 @@ enum TransactionType {
   TRANSFER_BUY
   FLIGHT
   EXPIRE
+  SALE
+}
+
+enum SaleStatus {
+  PAID
+  PENDING
+  CANCELLED
 }

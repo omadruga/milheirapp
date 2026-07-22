@@ -117,6 +117,17 @@ export async function updateTransaction(id, data, account, accountTo) {
   }
 }
 
+export async function updateSaleCostBasis(id, costBasis) {
+  try {
+    return await prisma.Transaction.update({
+      where: { id },
+      data: { costBasis },
+    });
+  } catch (e) {
+    console.log(e);
+  }
+}
+
 export async function updateAveragePriceTransfer(id, price) {
   try {
     const result = await prisma.Transaction.update({
@@ -273,6 +284,13 @@ async function calculate(accountId) {
         if (miles < 0) {
           miles = 0;
         }
+      }
+    } else if (t.type == "SALE") {
+      // venda de milhas: as milhas já saíram via emissão (FLIGHT), então NÃO
+      // altera saldo nem CPFs aqui. Apenas registra o custo das milhas vendidas
+      // com o preço médio corrente, para o cálculo de lucro no dashboard.
+      if (t.accountId == accountId) {
+        updateSaleCostBasis(t.id, (t.miles * averagePrice) / 1000);
       }
     }
 

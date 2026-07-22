@@ -132,6 +132,38 @@
     </div>
 
     <div class="lg:col-span-1">
+      <UCard class="mb-4">
+        <template #header>
+          <h3 class="font-semibold">Ganho com Vendas</h3>
+        </template>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <div class="text-xs text-gray-500">Recebido</div>
+            <div class="text-lg font-semibold text-green-600">
+              {{ brl(sales.recebido) }}
+            </div>
+          </div>
+          <div>
+            <div class="text-xs text-gray-500">Lucro</div>
+            <div class="text-lg font-semibold text-green-600">
+              {{ brl(sales.lucro) }}
+            </div>
+          </div>
+          <div>
+            <div class="text-xs text-gray-500">A receber</div>
+            <div class="text-lg font-semibold text-amber-500">
+              {{ brl(sales.aReceber) }}
+            </div>
+          </div>
+          <div>
+            <div class="text-xs text-gray-500">Previsto total</div>
+            <div class="text-lg font-semibold">{{ brl(sales.previsto) }}</div>
+          </div>
+        </div>
+        <div class="text-xs text-gray-400 mt-3">
+          {{ sales.count }} vendas · custo das milhas {{ brl(sales.custo) }}
+        </div>
+      </UCard>
       <SimulatorPanel :cpfs="cpfs ?? []" />
     </div>
   </div>
@@ -146,6 +178,35 @@ const { pending, data: cpfs } = await useFetch("/api/", { key: "cpfs", lazy: tru
 const formCpf = ref();
 const formAccount = ref();
 const formTransaction = ref();
+
+function brl(v) {
+  return (v ?? 0).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  });
+}
+
+const sales = computed(() => {
+  const s = { recebido: 0, previsto: 0, aReceber: 0, custo: 0, lucro: 0, count: 0 };
+  for (const cpf of cpfs.value ?? []) {
+    for (const account of cpf.accounts ?? []) {
+      for (const t of account.transactions ?? []) {
+        if (t.type !== "SALE") continue;
+        s.count++;
+        s.previsto += t.previsto ?? 0;
+        s.recebido += t.received ?? 0;
+        if (t.saleStatus === "PENDING")
+          s.aReceber += (t.previsto ?? 0) - (t.received ?? 0);
+        if (t.saleStatus === "PAID") {
+          s.custo += t.costBasis ?? 0;
+          s.lucro += (t.received ?? 0) - (t.costBasis ?? 0);
+        }
+      }
+    }
+  }
+  return s;
+});
+
 async function refresh() {
   await refreshNuxtData("cpfs");
 }
