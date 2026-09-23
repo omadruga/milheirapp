@@ -57,13 +57,22 @@
         >
           <!-- Profile dropdown -->
           <Menu v-if="loggedIn" as="div" class="relative ml-3">
-            <div>
+            <div class="flex items-center gap-2">
+              <span class="hidden text-sm text-gray-300 sm:block">
+                {{ displayName }}
+              </span>
               <MenuButton
                 class="relative flex rounded-full bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800"
               >
                 <span class="absolute -inset-1.5" />
                 <span class="sr-only">Abrir menu do perfil</span>
-                <Gravatar email="omadruga@gmail.com" size="60" />
+                <img
+                  v-if="user?.avatar_url"
+                  :src="user.avatar_url"
+                  :alt="displayName"
+                  class="h-9 w-9 rounded-full"
+                />
+                <Gravatar v-else :email="user?.email || ''" size="60" />
               </MenuButton>
             </div>
             <transition
@@ -75,16 +84,26 @@
               leave-to-class="transform opacity-0 scale-95"
             >
               <MenuItems
-                class="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                class="absolute right-0 z-10 mt-2 w-56 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
               >
+                <div class="border-b border-gray-100 px-4 py-3">
+                  <p class="text-sm font-medium text-gray-900">
+                    {{ user?.name || user?.login }}
+                  </p>
+                  <p class="truncate text-xs text-gray-500">
+                    @{{ user?.login }}
+                  </p>
+                </div>
                 <MenuItem v-slot="{ active }">
                   <a
-                    href="#"
+                    :href="user?.html_url"
+                    target="_blank"
+                    rel="noopener"
                     :class="[
                       active ? 'bg-gray-100' : '',
                       'block px-4 py-2 text-sm text-gray-700',
                     ]"
-                    >Perfil</a
+                    >Perfil no GitHub</a
                   >
                 </MenuItem>
                 <MenuItem v-slot="{ active }">
@@ -98,14 +117,16 @@
                   >
                 </MenuItem>
                 <MenuItem v-slot="{ active }">
-                  <a
-                    href="#"
+                  <button
+                    type="button"
+                    @click="logout"
                     :class="[
                       active ? 'bg-gray-100' : '',
-                      'block px-4 py-2 text-sm text-gray-700',
+                      'block w-full px-4 py-2 text-left text-sm text-gray-700',
                     ]"
-                    >Sair</a
                   >
+                    Sair
+                  </button>
                 </MenuItem>
               </MenuItems>
             </transition>
@@ -153,6 +174,30 @@ import {
 } from "@headlessui/vue";
 const { loggedIn, user, session, clear } = useUserSession();
 const route = useRoute();
+const displayName = computed(() => user.value?.name || user.value?.login || "");
+const toast = useToast();
+
+onMounted(() => {
+  const auth = route.query.auth;
+  if (!auth) return;
+  toast.add({
+    title:
+      auth === "denied"
+        ? "Conta do GitHub sem permissão"
+        : "Falha no login com GitHub",
+    description:
+      auth === "denied"
+        ? "Entre com uma conta autorizada (omadruga ou gustavoxadm)."
+        : "Tente novamente.",
+    color: "red",
+  });
+  navigateTo({ query: {} }, { replace: true });
+});
+
+const logout = async () => {
+  await clear();
+  await navigateTo("/", { external: true });
+};
 const navigation = [
   { name: "DASHBOARD", href: "/", current: route.name == "" },
   { name: "CPFS", href: "/cpfs", current: route.name == "cpfs" },
